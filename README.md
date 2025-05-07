@@ -70,6 +70,9 @@ source ~/.bashrc
 
 # Demo
 
+[![NeoLDAP: Overview and Capabilities](https://github.com/user-attachments/assets/3e7f943d-c8eb-4c60-b2b5-7368d3e4b2c5)](https://www.youtube.com/watch?v=5V22K3lDEFw)
+
+
 # Acknowledgements
 
 Special thanks to [@_wald0](https://twitter.com/_wald0), [@CptJesus](https://twitter.com/CptJesus), and [@harmj0y](https://twitter.com/harmj0y) for their work on **BloodHound**, a tool that has served as a foundational reference and source of inspiration for the development of Neo4LDAP.
