@@ -35,6 +35,8 @@ To support existing ecosystems, Neo4LDAP includes:
 
 This allows Neo4LDAP to **coexist with BloodHound** and be used as a practical alternative in the Active Directory cybersecurity field.
 
+> ⚠️ **Disclaimer:** At the moment, only on-premise data is processed, Azure data is not currectly supported.
+
 
 > 📘 To maximize the effectiveness of Neo4LDAP and gain a deeper understanding of how it handles special cases and internal logic, it is highly recommended to read through the full [project wiki](). The documentation covers key design decisions, usage examples, and query behaviors that may not be immediately apparent.
 
