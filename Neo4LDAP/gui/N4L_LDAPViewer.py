@@ -198,7 +198,7 @@ class LDAPViewerApp(ViewerApp):
         while self.query_rows_layout.count():
             item = self.query_rows_layout.takeAt(0)
             widget = item.widget()
-            if widget is not None:
+            if widget is not None :
                 widget.setParent(None)
 
     def add_custom_query_row(self, query_json, index) -> None:
@@ -231,52 +231,42 @@ class LDAPViewerApp(ViewerApp):
 
         self.query_rows_layout.addWidget(container)
 
-    def edit_custom_query(self, query_json, index):
+    def edit_custom_query(self, query_json, index) -> None:
         from Neo4LDAP.gui.N4L_Popups import N4LQueryPopup
-        N4LQueryPopup(self.controller, self.controller.retrieve_main_window(), index, query_json["name"], query_json["description"], query_json["query"], query_json["attributes"])
+        N4LQueryPopup(self.controller, self.controller.retrieve_main_window(), index, query_json["name"], query_json["description"], query_json["query"], ",".join(query_json["attributes"]))
 
-    def delete_custom_query(self, index):
+    def delete_custom_query(self, index) -> None:
         self.controller.delete_custom_query(index)
 
-    def run_custom_query(self, query_json):
+    def run_custom_query(self, query_json) -> None:
         self.query_input.setText(query_json["query"])
-        self.attributes_input.setText(query_json["attributes"])
+        self.attributes_input.setText(",".join(query_json["attributes"]))
 
         self.on_query_button_clicked()
 
     # ---
 
-    def init_ldap_result_panel(self) -> QFrame:
-        # Main frame
-        ldap_result_frame = QFrame()
-        ldap_result_frame.setStyleSheet("background-color: {background}; border: 1px solid {border}; border-radius: 10px;".format(background = self.LDAP_TABLE_BG, border = self.PANELS_BD))
-
-        # Result panel
-        table_panel = QWidget()
-        table_panel.setStyleSheet("background-color: {background}; border: none;".format(background = self.LDAP_TABLE_BG))
-
-        table_layout = QVBoxLayout(table_panel)
-
-        self.ldap_result_table = QTableWidget(0, 2)
-        self.ldap_result_table.setColumnWidth(0, 250)
-        self.ldap_result_table.setColumnWidth(1, 525)
+    def create_ldap_table(self) -> QTableWidget:
+        table  = QTableWidget(0, 2)
+        table.setColumnWidth(0, 250)
+        table.setColumnWidth(1, 525)
         
-        self.ldap_result_table.horizontalHeader().setSectionsMovable(False)
-        self.ldap_result_table.verticalHeader().setSectionsMovable(False)
+        table.horizontalHeader().setSectionsMovable(False)
+        table.verticalHeader().setSectionsMovable(False)
 
-        self.ldap_result_table.horizontalHeader().setSectionResizeMode(1, QHeaderView.ResizeToContents)
-        self.ldap_result_table.verticalHeader().setSectionResizeMode(QHeaderView.Fixed)
+        table.horizontalHeader().setSectionResizeMode(1, QHeaderView.ResizeToContents)
+        table.verticalHeader().setSectionResizeMode(QHeaderView.Fixed)
 
-        self.ldap_result_table.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
+        table.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
 
-        self.ldap_result_table.verticalHeader().setVisible(False)
-        self.ldap_result_table.horizontalHeader().setVisible(False)
+        table.verticalHeader().setVisible(False)
+        table.horizontalHeader().setVisible(False)
 
-        self.ldap_result_table.setContextMenuPolicy(Qt.CustomContextMenu)
-        self.ldap_result_table.customContextMenuRequested.connect(self.result_table_context_menu)
-        self.ldap_result_table.setFocusPolicy(Qt.StrongFocus)
+        table.setContextMenuPolicy(Qt.CustomContextMenu)
+        table.customContextMenuRequested.connect(self.result_table_context_menu)
+        table.setFocusPolicy(Qt.StrongFocus)
 
-        self.ldap_result_table.setStyleSheet("""
+        table.setStyleSheet("""
             QTableWidget {{
                 gridline-color: {background}; 
                 background-color: {background}; 
@@ -296,7 +286,22 @@ class LDAPViewerApp(ViewerApp):
             {scrollbar}
         """.format(background=self.LDAP_TABLE_BG, selection = self.SELECTION, scrollbar = self.QSCROLLBAR_STYLE))
 
-        table_layout.addWidget(self.ldap_result_table)
+        return table
+
+    def init_ldap_result_panel(self) -> QFrame:
+        # Main frame
+        ldap_result_frame = QFrame()
+        ldap_result_frame.setStyleSheet("background-color: {background}; border: 1px solid {border}; border-radius: 10px;".format(background = self.LDAP_TABLE_BG, border = self.PANELS_BD))
+
+        # Result panel
+        table_panel = QWidget()
+        table_panel.setStyleSheet("background-color: {background}; border: none;".format(background = self.LDAP_TABLE_BG))
+
+        self.table_layout = QVBoxLayout(table_panel)
+
+        self.ldap_result_table = self.create_ldap_table()
+
+        self.table_layout.addWidget(self.ldap_result_table)
         
         main_layout = QVBoxLayout(ldap_result_frame)
         main_layout.addWidget(table_panel)
@@ -375,7 +380,7 @@ class LDAPViewerApp(ViewerApp):
 
         for row, stat in enumerate(neo4j_statsTitle):
             stat_label, stat_item = "", ""
-            if(stat != ""):
+            if stat != "" :
                 stat_label = QTableWidgetItem(stat)
                 stat_label.setForeground(QColor("white"))
 
@@ -427,7 +432,7 @@ class LDAPViewerApp(ViewerApp):
     # Context menus
     def result_table_context_menu(self, position: QPoint) -> None:
         index = self.ldap_result_table.indexAt(position)
-        if not index.isValid():
+        if not index.isValid() :
             return
     
         menu = QMenu(self)
@@ -438,9 +443,9 @@ class LDAPViewerApp(ViewerApp):
         
         selected = menu.exec_(self.ldap_result_table.viewport().mapToGlobal(position))
         
-        if selected == copy_action:
+        if selected == copy_action :
             self.copy_cells()
-        elif selected == select_all_action:
+        elif selected == select_all_action :
             self.select_all_cells()
 
     def debug_context_menu(self, position) -> None:
@@ -454,16 +459,16 @@ class LDAPViewerApp(ViewerApp):
         action = menu.exec_(self.debug_text.mapToGlobal(position))
         cursor = self.debug_text.textCursor()
 
-        if action == copy_action and cursor.hasSelection():
+        if action == copy_action and cursor.hasSelection() :
             self.debug_copy_text()
-        elif action == select_all_action:
+        elif action == select_all_action :
             self.debug_select_all()
-        elif action == clear_action:
+        elif action == clear_action :
             self.debug_clear()
 
     def debug_copy_text(self) -> None:
         cursor = self.debug_text.textCursor()
-        if cursor.hasSelection():
+        if cursor.hasSelection() :
             self.debug_text.copy()
 
     def debug_select_all(self) -> None:
@@ -498,7 +503,7 @@ class LDAPViewerApp(ViewerApp):
         selected_items = self.ldap_result_table.selectedItems()
         clipboard = QApplication.clipboard()
         
-        if not selected_items:
+        if not selected_items :
             return 
         
         selected_columns = set()
@@ -507,15 +512,17 @@ class LDAPViewerApp(ViewerApp):
             
         formatted_text = []
 
-        if len(selected_columns) == 1:
+        if len(selected_columns) == 1 :
             for item in selected_items:
                 formatted_text.append(item.text())
         else: 
             for i in range(0, len(selected_items), 2):
                 column_0 = selected_items[i].text()
-                column_1 = selected_items[i + 1].text() if i + 1 < len(selected_items) else ""
+                column_1 = ""
+                if i + 1 < len(selected_items) :
+                    column_1 = selected_items[i + 1].text()
 
-                if column_0 != "":
+                if column_0 != "" :
                     formatted_text.append(f"{column_0}: {column_1}")
                 else:
                     formatted_text.append(f"\t  {column_1}")
@@ -529,6 +536,9 @@ class LDAPViewerApp(ViewerApp):
     def redraw_gui(self, resultOutput) -> None:
         lines = resultOutput.split("\n")
 
+        old_table = self.ldap_result_table
+        self.ldap_result_table = self.create_ldap_table()
+        
         self.ldap_result_table.setRowCount(len(lines))
 
         memberof_key = False
@@ -542,26 +552,29 @@ class LDAPViewerApp(ViewerApp):
         for row, line in enumerate(lines):
             split_data = line.split(":", 1)
             key = split_data[0].strip()
-            value = split_data[1].strip() if len(split_data) > 1 else ""
+            value = ""
 
-            if(key == ""):
+            if len(split_data) > 1 :
+                value = split_data[1].strip() 
+
+            if key == "" :
                 memberof_key = False
                 member_key = False
                 spn_key = False
 
-            if(key == "memberOf" and not memberof_key):
+            if key == "memberOf" and not memberof_key :
                 memberof_key = True
-            elif(key == "memberOf" and memberof_key):
+            elif key == "memberOf" and memberof_key :
                 key = ""
             
-            if(key == "member" and not member_key):
+            if key == "member" and not member_key :
                 member_key = True
-            elif(key == "member" and member_key):
+            elif key == "member" and member_key :
                 key = ""
 
-            if(key == "serviceprincipalnames" and not spn_key):
+            if key == "serviceprincipalnames" and not spn_key :
                 spn_key = True
-            elif(key == "serviceprincipalnames" and spn_key):
+            elif key == "serviceprincipalnames" and spn_key :
                 key = ""
 
             value_item = QTableWidgetItem(value)
@@ -578,6 +591,9 @@ class LDAPViewerApp(ViewerApp):
             self.ldap_result_table.setItem(row, 0, key_item)
             self.ldap_result_table.setItem(row, 1, value_item)
 
+        self.table_layout.replaceWidget(old_table, self.ldap_result_table)
+        old_table.deleteLater()
+
     def on_query_button_clicked(self) -> None: 
         query_value = self.query_input.text()
         attributes = self.attributes_input.text()
@@ -586,23 +602,23 @@ class LDAPViewerApp(ViewerApp):
         tokens = ["&", "|", "!"]
         valid_query = True
 
-        if(query_value == ""):
+        if query_value == "" :
             valid_query = False
         else:
-            if not re.search(r"(<=|>=|=|>|<)", query_value):
+            if not re.search(r"(<=|>=|=|>|<)", query_value) :
                 valid_query = False
             else:
                 for token in tokens:
-                    if(token in query_value and "(" + token not in query_value):
+                    if token in query_value and "(" + token not in query_value :
                         valid_query = False
                         break
             
-        if(valid_query):
+        if valid_query :
             attribute_list = None
-            if(attributes != ""):
+            if attributes != "" :
                 attribute_list = ["cn"]
                 for attribute in attributes.split(","):
-                    if(attribute != "cn" and attribute != "name"):
+                    if attribute != "cn" and attribute != "name" :
                         attribute_list.append(attribute.strip())
 
             self.controller.request_LDAP_query(query_value.strip(), attribute_list, raw_query)
@@ -623,7 +639,7 @@ class LDAPViewerApp(ViewerApp):
 
     def upload_files(self) -> None:
         from Neo4LDAP.gui.N4L_Popups import N4LFileExplorer
-        self.file_uploader = N4LFileExplorer(self.controller.retrieve_main_window())
+        self.file_uploader = N4LFileExplorer(self.controller.retrieve_main_window(), self.controller)
         self.file_uploader.show()
 
     def clear_neo4j_db_data(self) -> None:
@@ -632,7 +648,7 @@ class LDAPViewerApp(ViewerApp):
         question_box.decision_made.connect(self.clear_neo4j_db_data_decision)
     
     def clear_neo4j_db_data_decision(self, decision) -> None:
-        if(decision):
+        if decision :
             self.controller.clear_neo4j_db_data()
             self.controller.update_neo4j_db_stats()
 

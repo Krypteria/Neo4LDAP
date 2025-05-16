@@ -74,7 +74,7 @@ class ACLGraph:
 
         # bigger sum -> less path length -> bigger minimum value 
         def make_priority(path_values):
-            if(path_values): # negative values -> heapq inverse popup logic, minimum is at top
+            if path_values : # negative values -> heapq inverse popup logic, minimum is at top
                 return (-sum(path_values), len(path_values), -min(path_values))
             else:
                 return 0
@@ -133,8 +133,8 @@ class ACLGraph:
                 if "MemberOf" in acls:
                     continue
                 
-                if(self.graph.has_edge(source, target)):
-                    if(self.graph[source][target].get("relationship") != acls):
+                if self.graph.has_edge(source, target) :
+                    if self.graph[source][target].get("relationship") != acls :
                         hidden_counts[source] = hidden_counts.get(source, 0) + 1
                 else:
                     hidden_counts[source] = hidden_counts.get(source, 0) + 1
@@ -147,11 +147,11 @@ class ACLGraph:
 
         best_parent = self.compute_best_paths_with_cycles(name)
         
-        if(not inbound_check):
+        if not inbound_check :
             for target, (source, acl_label) in best_parent.items():
                 dag.add_relationship(source, acl_label, target)
 
-                if(self.creates_cycle(dag, source, target)):
+                if self.creates_cycle(dag, source, target) :
                     dag.graph.remove_edge(source, target)
 
         elif inbound_check:
@@ -181,7 +181,7 @@ class ACLGraph:
             for node in nodes:
                 node_fullname, node_type, node_id = self.retrieve_node_identity(node)
 
-                if((node_fullname not in self.graph) and ((exclusion_list == None) or (exclusion_list != None and node_fullname not in exclusion_list))):
+                if (node_fullname not in self.graph) and ((exclusion_list == None) or (exclusion_list != None and node_fullname not in exclusion_list)) :
                     self.graph.add_node(node_fullname, node_type=node_type, node_id = node_id)
                     node_list.append(node_fullname)
 
@@ -193,22 +193,22 @@ class ACLGraph:
                 source, _, _ = self.retrieve_node_identity(source_node)
                 target, _, _ = self.retrieve_node_identity(target_node)
 
-                if(inbound_check):
-                    if((exclusion_list == None) or (exclusion_list != None and source not in exclusion_list)):
-                        if(acl not in self.acls_by_nodes[source][target]):
+                if inbound_check :
+                    if (exclusion_list == None) or (exclusion_list != None and source not in exclusion_list) :
+                        if acl not in self.acls_by_nodes[source][target] :
                             self.acls_by_nodes[source][target].append(acl)
                 else:
-                    if((exclusion_list == None) or (exclusion_list != None and target not in exclusion_list)):
-                        if(target.upper() != name.upper()):
-                            if(acl not in self.acls_by_nodes[source][target]):
+                    if (exclusion_list == None) or (exclusion_list != None and target not in exclusion_list) :
+                        if target.upper() != name.upper() :
+                            if acl not in self.acls_by_nodes[source][target] :
                                 self.acls_by_nodes[source][target].append(acl)
                 
-                if(targeted_search):
+                if targeted_search :
                     for enriched_acl in enriched_acls:
                         source, target, acls = enriched_acl
 
                         for acl in acls:
-                            if(acl not in self.acls_by_nodes[source][target]):
+                            if acl not in self.acls_by_nodes[source][target] :
                                 self.acls_by_nodes[source][target].append(acl)
 
 
@@ -231,7 +231,7 @@ class ACLGraph:
                             has_all_acls = False
                             break
 
-                    if(has_all_acls):
+                    if has_all_acls :
                         add_set.add(replacement_acl)
                         remove_set.update(required_acls)
 
@@ -262,7 +262,7 @@ class ACLGraph:
 
         node_id = node.get("objectid", "UNKNOWN")
         
-        if(node_type[0] == "Domain"):
+        if node_type[0] == "Domain" :
             return node.get("domain", "UNKNOWN"), node_type[0], node_id
         else:
             fullname = node.get("name", "UNKNOWN")
@@ -292,7 +292,7 @@ def retrieve_acls_by_depth(acl_graph, name, root_node, acl_list, depth, level, e
 
             result = session.run(query)
             nodes = acl_graph.populate_graph(result, root_node, exclusion_list)
-            if(level < depth):
+            if level < depth :
                 for node in nodes:
                     retrieve_acls_by_depth(acl_graph, node, root_node, acl_list, depth, level + 1, exclusion_list)   
         except:
@@ -374,21 +374,21 @@ def retrieve_acl_list(acls) -> list:
     acl_list_lower = [acl.lower() for acl in acls]
     acl_list = ""
 
-    if(len(acls) > 1):
+    if len(acls) > 1 :
         for acl in acl_list_lower:
             acl_list += valid_acls[acl] + "|"
 
         acl_list = acl_list[:-1]
     else:
-        if(acl_list_lower[0] == "all"):
+        if acl_list_lower[0] == "all" :
             for acl in valid_acls.values():
-                if(acl != "Contains"):
+                if acl != "Contains" :
                     acl_list += acl + "|"
             
             acl_list = acl_list[:-1]
-        elif(acl_list_lower[0] == "firstdegree"):
+        elif acl_list_lower[0] == "firstdegree" :
             for acl in valid_acls.values():
-                if(acl != "MemberOf"):
+                if acl != "MemberOf" :
                     acl_list += acl + "|"
             
             acl_list = acl_list[:-1]
@@ -408,26 +408,26 @@ def check_acls(name, acls, depth, source_node, target_node, exclusion_list = Non
         inbound_search = inbound_check
         outbound_search = False
 
-        if(not targeted_search and not inbound_search):
+        if not targeted_search and not inbound_search :
             outbound_search = True
         
-        if(outbound_search):
-            if(depth == ''):
+        if outbound_search :
+            if depth == '' :
                 depth = 100
             else:
                 depth = int(depth)
 
             retrieve_acls_by_depth(acl_graph, name, name, acl_list, depth, 1, exclusion_list)
-        elif(inbound_search):
+        elif inbound_search :
             retrieve_inbound_acls(acl_graph, name, name, acl_list, exclusion_list)
-        elif(targeted_search):
+        elif targeted_search :
             root_node = source_node
             retrieve_acls_by_target(acl_graph, source_node, target_node, acl_list, exclusion_list)
 
 
-        if(len(acl_graph.graph) != 0):
+        if len(acl_graph.graph) != 0 :
             acl_graph.process_graph_acls()
-            if(outbound_search or inbound_search):
+            if outbound_search or inbound_search :
                 acl_graph.compute_dag_graph(name, inbound_check)
 
             draw_acl_graph(acl_graph.graph, root_node, inbound_check)

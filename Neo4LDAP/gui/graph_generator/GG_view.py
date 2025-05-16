@@ -64,19 +64,19 @@ class GraphView(QGraphicsView):
 
     def choose_node_color(self, node_type) -> str:
         color = ""
-        if(node_type == "User"):
+        if node_type == "User" :
             color = "#387478"
-        elif(node_type == "Group"):
+        elif node_type == "Group" :
             color = "#B8A349"
-        elif(node_type == "Computer"):
+        elif node_type == "Computer" :
             color = "#9B4F4F"
-        elif(node_type == "OU"):
+        elif node_type == "OU" :
             color = "#A06A42"
-        elif(node_type == "GPO"):
+        elif node_type == "GPO" :
             color = "#6F9EBF"
-        elif(node_type == "Domain"):
+        elif node_type == "Domain" :
             color = "#50708A"
-        elif(node_type == "Container"):
+        elif node_type == "Container" :
             color = "#9D5C48"
         else:
             color = "#c21289"
@@ -95,7 +95,7 @@ class GraphView(QGraphicsView):
     def get_node_parents(self, node) -> list:
         result = []
         for edge in node.edges:
-            if edge.dst == node:
+            if edge.dst == node :
                 result.append(edge.src)
 
         return result
@@ -103,7 +103,7 @@ class GraphView(QGraphicsView):
     def get_node_childrens(self, node) -> list:
         result = []
         for edge in node.edges:
-            if edge.src == node:
+            if edge.src == node :
                 result.append(edge.dst)
 
         return result
@@ -129,7 +129,7 @@ class GraphView(QGraphicsView):
             edge.arrow_head.setVisible(show)
             edge.label.setVisible(show)
 
-            if show:
+            if show :
                 edge.update_edge_position()
     
     # ---
@@ -137,7 +137,7 @@ class GraphView(QGraphicsView):
     # Visibility and layout utilities
     def collect_node_descendants(self, root_label) -> set:
         def dfs(node):
-            if node not in reachable:
+            if node not in reachable :
                 reachable.add(node)
                 for child_node in self.get_node_childrens(node):
                     dfs(child_node)
@@ -155,15 +155,19 @@ class GraphView(QGraphicsView):
 
         for edge in edges:
             source_node, target_node = edge.src, edge.dst
-            if reachable_nodes and (source_node not in reachable_nodes or target_node not in reachable_nodes):
+            if reachable_nodes and (source_node not in reachable_nodes or target_node not in reachable_nodes) :
                 continue
 
             graph[source_node].append(target_node)
             in_degree[target_node] += 1
-            if source_node not in in_degree:
+            if source_node not in in_degree :
                 in_degree[source_node] = 0
 
-        queue = deque([node for node, deg in in_degree.items() if deg == 0])
+        queue = deque()
+        for node, degree in in_degree.items():
+            if degree == 0 :
+                queue.append(node)
+
         ordered = []
 
         while queue:
@@ -171,7 +175,7 @@ class GraphView(QGraphicsView):
             ordered.append(node)
             for child in graph[node]:
                 in_degree[child] -= 1
-                if in_degree[child] == 0:
+                if in_degree[child] == 0 :
                     queue.append(child)
 
         return ordered
@@ -186,21 +190,21 @@ class GraphView(QGraphicsView):
 
         filtered_edges = []
         for edge in self.edges:
-            if edge.src in reachable_nodes and edge.dst in reachable_nodes:
+            if edge.src in reachable_nodes and edge.dst in reachable_nodes :
                 filtered_edges.append(edge)
         
         ordered_nodes = self.kahn_sort(filtered_edges, reachable_nodes)
         
         # If any parent is visible, the node must be visible
         for node in ordered_nodes:
-            if node == root_node:
+            if node == root_node :
                 continue
 
             parents = self.get_node_parents(node)
             visible = False
 
             for parent in parents:
-                if parent.isVisible() and not parent.subgraph_hidden:
+                if parent.isVisible() and not parent.subgraph_hidden :
                     visible = True
                     break
 
@@ -214,7 +218,7 @@ class GraphView(QGraphicsView):
         visible_edges = []
 
         for edge in self.edges:
-            if edge.src.isVisible() and edge.dst.isVisible():
+            if edge.src.isVisible() and edge.dst.isVisible() :
                 visible_edges.append(edge)
 
         ordered_nodes = self.kahn_sort(visible_edges)
@@ -224,12 +228,12 @@ class GraphView(QGraphicsView):
         layers = defaultdict(list)
 
         for node in ordered_nodes:
-            if node.isVisible():
+            if node.isVisible() :
                 layer = layer_map[node]
                 layers[layer].append(node)
 
                 for child in self.get_node_childrens(node):
-                    if child.isVisible():
+                    if child.isVisible() :
                         layer_map[child] = max(layer_map[child], layer + 1)
 
         # Layout nodes in each layer
@@ -243,11 +247,11 @@ class GraphView(QGraphicsView):
             for node in layer_nodes:
                 has_child = False
                 for child_node in self.get_node_childrens(node):
-                    if(child_node.isVisible()):
+                    if child_node.isVisible() :
                         has_child = True
                         break
 
-                if has_child:
+                if has_child :
                     with_children.append(node)
                 else:
                     without_children.append(node)
@@ -269,7 +273,7 @@ class GraphView(QGraphicsView):
 
         # If the root node is not processed, need to be setted
         root_node = self.nodes[root_label]
-        if root_node not in layer_map:
+        if root_node not in layer_map :
             root_node.setPos(0, 0)
 
         self.update_all_edges()
@@ -278,23 +282,23 @@ class GraphView(QGraphicsView):
 
     # Input events
     def mouseMoveEvent(self, event):
-        if self._drag_active and self._last_mouse_pos:
+        if self._drag_active and self._last_mouse_pos :
             current_pos = event.position().toPoint()
             delta = current_pos - self._last_mouse_pos
             self._last_mouse_pos = current_pos
 
-            if not self._clicked_on_node:
+            if not self._clicked_on_node :
                 self.translate(delta.x(), delta.y())
         
         super().mouseMoveEvent(event)
 
     def keyPressEvent(self, event):
-        if event.key() == Qt.Key_Control:
+        if event.key() == Qt.Key_Control :
             self._ctrl_pressed = True
         super().keyPressEvent(event)
 
     def keyReleaseEvent(self, event):
-        if event.key() == Qt.Key_Control:
+        if event.key() == Qt.Key_Control :
             self._ctrl_pressed = False
         super().keyReleaseEvent(event)
 
@@ -309,12 +313,12 @@ class GraphView(QGraphicsView):
         self._clicked_on_node = False
         self._last_mouse_pos = event.position().toPoint()
 
-        if event.button() == Qt.LeftButton and self._ctrl_pressed:
+        if event.button() == Qt.LeftButton and self._ctrl_pressed :
             self.setDragMode(QGraphicsView.RubberBandDrag)
-        elif event.button() == Qt.LeftButton:
+        elif event.button() == Qt.LeftButton :
             self.setDragMode(QGraphicsView.NoDrag)
 
-            if isinstance(item, GraphNode):
+            if isinstance(item, GraphNode) :
                 self._clicked_on_node = True
             else:
                 self._drag_active = True
@@ -323,7 +327,7 @@ class GraphView(QGraphicsView):
         super().mousePressEvent(event)
 
     def mouseReleaseEvent(self, event):
-        if event.button() == Qt.LeftButton:
+        if event.button() == Qt.LeftButton :
             self._drag_active = False
             self._clicked_on_node = False
             self.setCursor(Qt.ArrowCursor)
@@ -333,7 +337,7 @@ class GraphView(QGraphicsView):
     def wheelEvent(self, event):
         zoom = 0
 
-        if(event.angleDelta().y() > 0):
+        if event.angleDelta().y() > 0 :
             zoom = 1.25
         else:
             zoom =  1 / 1.25
@@ -352,7 +356,7 @@ class GraphView(QGraphicsView):
             nodes.append(self.nodes[label])
 
         def visit(node):
-            if node not in visited:
+            if node not in visited :
                 visited.add(node)
 
                 for child in self.get_node_childrens(node):
@@ -394,19 +398,19 @@ class GraphView(QGraphicsView):
         selected = menu.exec(global_pos)
         topological_selected_nodes = self.simple_topological_sort(selected_nodes)
 
-        if(selected == hide_action):
+        if selected == hide_action :
             for selected_node in topological_selected_nodes:
                 for node in self.scene.selectedItems():
-                    if(node == selected_node):
+                    if node == selected_node :
                         node.toggle_action(hide=True)
             self.update_edge_visibility()
-        elif(selected == show_action):
+        elif selected == show_action :
             for selected_node in topological_selected_nodes:
                 for node in self.scene.selectedItems():
-                    if(node == selected_node):
+                    if node == selected_node :
                         node.toggle_action(hide=False)
             self.update_edge_visibility()
-        elif selected == exclude_action:
+        elif selected == exclude_action :
             excluded_nodes = []
             for selected_node in topological_selected_nodes:
                 excluded_nodes.append(selected_node.label)
@@ -420,31 +424,31 @@ class GraphView(QGraphicsView):
         scene_pos = self.mapToScene(event.pos())
         item = self.scene.itemAt(scene_pos, self.transform())
 
-        if isinstance(item, GraphNode):
-            if not item.isSelected():
+        if isinstance(item, GraphNode) :
+            if not item.isSelected() :
                 self.scene.clearSelection()
                 item.setSelected(True)
 
         selected_nodes = self.retrieve_selected_nodes()
 
-        if isinstance(item, GraphNode) and len(selected_nodes) == 1:
+        if isinstance(item, GraphNode) and len(selected_nodes) == 1 :
             item.show_context_menu(event.globalPos())
-        elif len(selected_nodes) > 1:
+        elif len(selected_nodes) > 1 :
             self.show_context_menu(event.globalPos(), selected_nodes)
 
     # ---
 
     def clear_graph(self) -> None:
         for edge in self.edges:
-            if edge.scene() is self.scene:
+            if edge.scene() is self.scene :
                 self.scene.removeItem(edge)
-            if edge.arrow_head.scene() is self.scene:
+            if edge.arrow_head.scene() is self.scene :
                 self.scene.removeItem(edge.arrow_head)
-            if(edge.label.scene() is self.scene):
+            if edge.label.scene() is self.scene :
                 self.scene.removeItem(edge.label)
 
         for node in self.nodes.values():
-            if node.scene() is self.scene:
+            if node.scene() is self.scene :
                 self.scene.removeItem(node)
 
         self.nodes.clear()
@@ -459,7 +463,7 @@ class GraphView(QGraphicsView):
         for source, target, data in graph.edges(data=True):
             self.add_edge(source, target, data.get("relationship", ""))
 
-        if inbound_check:
+        if inbound_check :
             self.COLUMN_WIDTH = 700
         else:
             self.COLUMN_WIDTH = 400

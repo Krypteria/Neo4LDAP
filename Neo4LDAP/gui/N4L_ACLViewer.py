@@ -212,7 +212,7 @@ class ACLViewerApp(ViewerApp):
     def basic_search_changed(self) -> None:
         has_text = bool(self.name_input.text().strip()) or bool(self.acl_input.text().strip()) or bool(self.depth_input.text().strip())
         
-        if self.inbound_check.isChecked():
+        if self.inbound_check.isChecked() :
             self.source_input.setReadOnly(True)
             self.target_input.setReadOnly(True)
             self.depth_input.setReadOnly(True)
@@ -242,7 +242,7 @@ class ACLViewerApp(ViewerApp):
 
             self.source_input.setStyleSheet(self.DISABLED_INPUT_STYLE)
             self.target_input.setStyleSheet(self.DISABLED_INPUT_STYLE)
-        elif not self.inbound_check.isChecked():
+        elif not self.inbound_check.isChecked() :
             self.source_input.setReadOnly(False)
             self.target_input.setReadOnly(False)
 
@@ -252,7 +252,7 @@ class ACLViewerApp(ViewerApp):
     def targeted_search_changed(self) -> None:
         has_text = bool(self.source_input.text().strip()) or bool(self.target_input.text().strip())
 
-        if has_text:
+        if has_text :
             self.name_input.setReadOnly(True)
             self.acl_input.setReadOnly(True)
             self.depth_input.setReadOnly(True)
@@ -280,26 +280,26 @@ class ACLViewerApp(ViewerApp):
         source_value = self.source_input.text()
         target_value = self.target_input.text()
 
-        if(depth_value != "" and not depth_value.isdigit()):
+        if depth_value != "" and not depth_value.isdigit() :
             from Neo4LDAP.gui.N4L_Popups import N4LMessageBox
             N4LMessageBox("Information", "Depth must be an integer", self.controller.retrieve_main_window())
         else:
             acl_list = []
 
             valid_parameters = True
-            if(not self.name_input.isReadOnly()): #Basic search
-                if(acl_value == "" or name_value == ""):
+            if not self.name_input.isReadOnly() : #Basic search
+                if acl_value == "" or name_value == "" :
                     valid_parameters = False
-            elif(not self.source_input.isReadOnly()): #Targeted search
-                if(source_value == "" or target_value == ""):
+            elif not self.source_input.isReadOnly() : #Targeted search
+                if source_value == "" or target_value == "" :
                     valid_parameters = False
 
-            if(valid_parameters):
+            if valid_parameters :
                 for acl in acl_value.split(","):
-                    if(acl != ""):
+                    if acl != "" :
                         acl_list.append(acl.strip())
 
-                if(source_value != "" and target_value != ""):
+                if source_value != "" and target_value != "" :
                     acl_list.append("all")
 
                 exclusion_list = []
@@ -313,7 +313,7 @@ class ACLViewerApp(ViewerApp):
 
     def on_search_button_clicked(self) -> None: 
         valid_parameters, name_value, acl_list, depth_value, source_value, target_value, exclusion_list, inbound_check =  self.process_inputs()
-        if valid_parameters:
+        if valid_parameters :
             self.controller.request_ACL_query(name_value, acl_list, depth_value, source_value, target_value, exclusion_list, inbound_check)
             
     # ---
@@ -362,14 +362,14 @@ class ACLViewerApp(ViewerApp):
 
         excluded_nodes = excluded_nodes[:-1]
 
-        if(self.nodes_input.text()):
+        if self.nodes_input.text() :
             self.nodes_input.setText(self.nodes_input.text() + "," + excluded_nodes)
         else:
             self.nodes_input.setText(excluded_nodes)
 
         valid_parameters, name_value, acl_list, depth_value, source_value, target_value, exclusion_list, inbound_check =  self.process_inputs()
 
-        if valid_parameters:
+        if valid_parameters :
             return name_value, acl_list, depth_value, source_value, target_value, exclusion_list, inbound_check
 
     # ---

@@ -58,7 +58,7 @@ class GraphEdge(QGraphicsLineItem):
         perp_x = -uy
         perp_y = ux
 
-        if -90 <= angle_deg <= 90:
+        if -90 <= angle_deg <= 90 :
             effective_offset = -self.offset
         else:
             effective_offset = self.offset * 2
@@ -70,7 +70,7 @@ class GraphEdge(QGraphicsLineItem):
         return p1, p2, ux, uy, angle_deg, perp_x, perp_y, offset_x, offset_y
 
     def update_label_position(self, line, perp_x, perp_y, angle) -> None:
-        if not self.label_text:
+        if not self.label_text :
             return
 
         label_point = line.pointAt(0.42)
@@ -87,7 +87,7 @@ class GraphEdge(QGraphicsLineItem):
         self.label.setTransformOriginPoint(bbox.width() / 2, bbox.height() / 2)
         self.label.setRotation(angle)
 
-        if self.scene() and not self.label.scene():
+        if self.scene() and not self.label.scene() :
             self.scene().addItem(self.label)
 
     def update_arrow_position(self, end, ux, uy) -> None:
@@ -100,8 +100,8 @@ class GraphEdge(QGraphicsLineItem):
         
         self.arrow_head.setPolygon(QPolygonF([point1, point2, point3]))
 
-        if self.scene():
-            if self.arrow_head and not self.arrow_head.scene():
+        if self.scene() :
+            if self.arrow_head and not self.arrow_head.scene() :
                 self.scene().addItem(self.arrow_head)
 
     def update_edge_position(self) -> None:

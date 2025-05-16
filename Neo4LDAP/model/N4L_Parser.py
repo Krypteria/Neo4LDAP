@@ -55,7 +55,7 @@ def process_laps_sync() -> None:
 
     for group_id in privileged_groups:
         for computer_id in laps_computers:
-            if(group_id.endswith(tuple(default_dcsync_groups))):
+            if group_id.endswith(tuple(default_dcsync_groups)) :
                 pair = {
                     "group_id": group_id,
                     "computer_id": computer_id
@@ -103,11 +103,11 @@ def process_trusts(data):
             direction = child["TrustDirection"]
 
             trust = ""
-            if(direction == 1 or direction == "Inbound"):
+            if direction == 1 or direction == "Inbound" :
                 trust = "MERGE (domain_id)-[:TrustedBy]->(target_domain)"
-            elif(direction == 2 or direction == "Outbound"):
+            elif direction == 2 or direction == "Outbound" :
                 trust = "MERGE (target_domain)-[:TrustedBy]->(domain_id)"
-            elif(direction == 3 or direction == "Bidirectional"):
+            elif direction == 3 or direction == "Bidirectional" :
                 trust = """
                 MERGE (domain_id)-[:TrustedBy]->(target_domain)
                 MERGE (target_domain)-[:TrustedBy]->(domain_id)
@@ -185,10 +185,10 @@ def process_ps_remote(data):
 def process_execute_dcom(data):
     process_remote_accounts(data, "DcomUsers", "ExecuteDCOM")
 
-def process_computer_remoting(data, is_legacy): 
+def process_computer_remoting(data, is_legacy):
     process_sessions(data)
     
-    if(is_legacy):
+    if is_legacy :
         process_rdp_users(data)
         process_local_admins(data)
         process_execute_dcom(data)
@@ -203,7 +203,7 @@ def process_relationships(data, relationship_key, relationship_type, node_id = "
         target_id = node["ObjectIdentifier"]
 
         for nodes in node.get(relationship_key, []):
-            if(relationship_type == "Contains"):
+            if relationship_type == "Contains" :
                 relationships.append({
                     "source_SID": target_id,
                     "target_SID": nodes[node_id]
@@ -232,9 +232,9 @@ def process_child_objects(data):
     process_relationships(data, "ChildObjects", "Contains")
 
 def process_memberships(data, data_type):
-    if(data_type == "Group"):
+    if data_type == "Group" :
         process_relationships(data, "Members", "MemberOf")
-    elif(data_type == "User" or data_type == "Computer"):
+    elif data_type == "User" or data_type == "Computer" :
         process_primary_memberships(data)
 
 # # Delegation
@@ -315,7 +315,7 @@ def retrieve_json_info(json_file):
     data_type_raw = data_raw["meta"]["type"]
     
     data_type = ""
-    if(data_type_raw == "ous" or data_type_raw == "gpos"):
+    if data_type_raw == "ous" or data_type_raw == "gpos" :
         data_type = data_type_raw.upper()[0:-1]
     else:
         data_type = data_type_raw[0].upper() + data_type_raw[1:-1]
@@ -370,21 +370,21 @@ def upload_data(json_files, is_legacy) -> None:
                     process_memberships(data, data_type)
                     process_aces(data)
                     
-                    if(data_type == "Container" or data_type == "OU"):
+                    if data_type == "Container" or data_type == "OU" :
                         process_child_objects(data)
                         process_gplinks(data)
 
-                    if(data_type == "Computer"):
+                    if data_type == "Computer" :
                         process_computer_remoting(data, is_legacy)
                         process_computer_delegation(data)
 
-                    if(data_type == "User"):
+                    if data_type == "User" :
                         process_user_delegation(data)
 
-                    if(data_type == "Domain"):
+                    if data_type == "Domain" :
                         process_trusts(data)
 
-                    if(data_type == "Group"):
+                    if data_type == "Group" :
                         process_laps_sync()
 
                     push_debug_info("    [✔] {file}".format(file = file_name))

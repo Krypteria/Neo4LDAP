@@ -2,14 +2,14 @@ from PySide6.QtWidgets import QTreeView, QFileSystemModel, QAbstractItemView, QB
 from PySide6.QtCore import QDir
 
 from Neo4LDAP.gui.N4L_CommonViewer import *
-from Neo4LDAP.model.N4L_Parser import upload_data
 
 import os
 
 class N4LFileExplorer(Popups):
-    def __init__(self, parent):
+    def __init__(self, parent, controller):
         super().__init__(parent)
         
+        self.controller = controller
         self.first_time = True
         self.selected_files = []
 
@@ -127,31 +127,31 @@ class N4LFileExplorer(Popups):
 
     def navigate_to_path(self) -> None:
         path = self.path_input.text()
-        if os.path.isdir(path):
+        if os.path.isdir(path) :
             self.view.setRootIndex(self.model.index(path))
         else:
             N4LMessageBox("Error", "The specified path is not valid")
 
     def add_selected_files(self) -> None:
-        if self.first_time:
+        if self.first_time :
             self.debug_panel.append("=== SELECTED FILES ===\n")
             self.first_time = False
 
         indexes = self.view.selectionModel().selectedIndexes()
 
         for index in indexes:
-            if index.column() != 0:
+            if index.column() != 0 :
                 continue
 
             path = self.model.filePath(index)
-            if os.path.isfile(path) and path.endswith(".json"):
-                if path not in self.selected_files:
+            if os.path.isfile(path) and path.endswith(".json") :
+                if path not in self.selected_files :
                     self.debug_panel.append(path)
                     self.selected_files.append(path)
 
     def confirm_selection(self) -> None:
         self.debug_panel.append("\n=== UPLOADING FILES TO NEO4J ===\n")
-        upload_data(self.selected_files, self.legacy_check.isChecked())
+        self.controller.ingest_data_to_neo4j(list(self.selected_files), self.legacy_check.isChecked())
         self.selected_files.clear()
 
     def push_debug_info(self, message) -> None:
@@ -273,16 +273,16 @@ class N4LQueryPopup(Popups):
         self.query_input = self.create_text_field("LDAP query")
         self.attributes_input = self.create_text_field("Attributes")
 
-        if(name != ""):
+        if name != "" :
             self.name_input.setText(name)
 
-        if(description != ""):
+        if description != "" :
             self.description_input.setText(description)
 
-        if(query != ""):
+        if query != "" :
             self.query_input.setText(query)
 
-        if(attributes != ""):
+        if attributes != "" :
             self.attributes_input.setText(attributes)
 
         self.index = index
@@ -332,32 +332,32 @@ class N4LQueryPopup(Popups):
         tokens = ["&", "|", "!"]
         valid_query = True
 
-        if(query == "" or name == ""):
+        if query == "" or name == "" :
             valid_query = False
         else:
-            if not re.search(r"(<=|>=|=|>|<)", query):
+            if not re.search(r"(<=|>=|=|>|<)", query) :
                 valid_query = False
             else:
                 for token in tokens:
-                    if(token in query and "(" + token not in query):
+                    if token in query and "(" + token not in query :
                         valid_query = False
                         break
             
-        if(valid_query):
+        if valid_query :
             attribute_list = None
-            if(attributes != ""):
+            if attributes != "" :
                 attribute_list = ["cn"]
                 for attribute in attributes.split(","):
-                    if(attribute != "cn" and attribute != "name"):
+                    if attribute != "cn" and attribute != "name" :
                         attribute_list.append(attribute.strip())
 
             self.controller.add_new_custom_query(self.index, name, description, query, attribute_list)
             self.close()
         else:
             text = ""
-            if(name == ""):
+            if name == "" :
                 text = "Name can't be empty"
-            elif(query == ""):
+            elif query == "" :
                 text = "LDAP query can't be empty"
             else:
                 text = "The provided LDAP query is not a valid LDAP query"

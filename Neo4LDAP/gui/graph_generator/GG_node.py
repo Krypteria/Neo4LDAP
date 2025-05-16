@@ -22,9 +22,9 @@ class GraphNode(QGraphicsEllipseItem):
         self.setBrush(QBrush(self.default_color))
         self.setFlags(QGraphicsItem.ItemIsSelectable | QGraphicsItem.ItemIsMovable | QGraphicsItem.ItemSendsGeometryChanges)
 
-        if(node_type == "OU"):
+        if node_type == "OU" :
             self.node_type = "OrganizationalUnit"
-        elif(node_type == "GPO"):
+        elif node_type == "GPO" :
             self.node_type = "GroupPolicyContainer"
         else:
             self.node_type = node_type
@@ -41,11 +41,11 @@ class GraphNode(QGraphicsEllipseItem):
         self.text.setZValue(3)
 
     def set_hidden_count(self, count: int) -> None:
-        if hasattr(self, 'count_text') and self.count_text:
+        if hasattr(self, 'count_text') and self.count_text :
             self.scene().removeItem(self.count_text)
             self.count_text = None
 
-        if count <= 0:
+        if count <= 0 :
             return
 
         self.count_text = QGraphicsTextItem(str(count), self)
@@ -65,17 +65,17 @@ class GraphNode(QGraphicsEllipseItem):
         super().mouseMoveEvent(event)
 
         scene = self.scene()
-        if not scene:
+        if not scene :
             return
         
         for item in scene.selectedItems():
-            if isinstance(item, GraphNode):
+            if isinstance(item, GraphNode) :
                 for edge in item.edges:
                     edge.update_edge_position()
 
     def update_visual_cue(self) -> None:
         color = ""
-        if(self.subgraph_hidden):
+        if self.subgraph_hidden :
             color = self.collapsed_color
         else:
             color = self.default_color
@@ -104,7 +104,7 @@ class GraphNode(QGraphicsEllipseItem):
         menu.addSeparator()
 
         toggle_action = ""
-        if self.subgraph_hidden:
+        if self.subgraph_hidden :
             toggle_action = menu.addAction("Show")
         else:
             toggle_action = menu.addAction("Hide")
@@ -123,21 +123,21 @@ class GraphNode(QGraphicsEllipseItem):
         from Neo4LDAP.controllers.N4L_Controller import N4LController
         controller = N4LController().get_instance()
         
-        if selected == toggle_action:
+        if selected == toggle_action :
             self.toggle_action(not self.subgraph_hidden)
-        elif selected == details_action:
+        elif selected == details_action :
             query = "(&(objectClass={node_type})(objectid={node_id}))".format(node_type = self.node_type, node_id = self.node_id)
 
             controller.request_LDAP_query_from_node(query, None, False)
-        elif selected == inbound_action:
+        elif selected == inbound_action :
             controller.request_inbound_graph_from_node(self.label)
-        elif selected == outbound_action:
+        elif selected == outbound_action :
             controller.request_outbound_graph_from_node(self.label)
-        elif selected == exclusion_action:
+        elif selected == exclusion_action :
             controller.repeat_request_with_exclusion([self.label])
-        elif selected == target_action:
+        elif selected == target_action :
             controller.put_target(self.label)
-        elif selected == source_action:
+        elif selected == source_action :
             controller.put_source(self.label)
 
         

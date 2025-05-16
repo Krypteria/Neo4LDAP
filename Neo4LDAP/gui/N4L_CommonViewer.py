@@ -1,5 +1,5 @@
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QTextEdit, QHBoxLayout, QPushButton, QLineEdit, QLabel, QSplitter, QSizePolicy, QFrame, QMessageBox, QSpacerItem, QCheckBox
-from PySide6.QtCore import Qt, Signal, QObject
+from PySide6.QtCore import Qt, Signal, QObject, QThread
 
 import re 
 
@@ -261,17 +261,17 @@ class QWidgetFactory(Styles):
         input_field = QLineEdit()
         input_field.setStyleSheet(self.INPUT_STYLE)
         input_field.setContextMenuPolicy(Qt.NoContextMenu)
-        if(text != None):
+        if text != None :
             input_field.setPlaceholderText(text)
 
         return input_field
     
     def create_popup_text_field(self, text, placeholder_text = None) -> QTextEdit:
         message_text = QTextEdit()
-        if(text != None):
+        if text != None :
             message_text.setText(text)
         
-        if(placeholder_text != None):
+        if placeholder_text != None :
             message_text.setPlaceholderText(placeholder_text)
 
         message_text.setReadOnly(True)
@@ -285,12 +285,12 @@ class QWidgetFactory(Styles):
     def create_label(self, title, fixed_size = False, style = None, size = 20) -> QLabel:
         label = QLabel(title)
         
-        if(style == None):
+        if style == None :
             label.setStyleSheet(self.LABEL_STYLE)
         else:
             label.setStyleSheet(style)
 
-        if(fixed_size):
+        if fixed_size :
             label.setFixedHeight(size)
 
         return label
@@ -298,7 +298,7 @@ class QWidgetFactory(Styles):
     def create_button(self, title, on_click_trigger, style = None) -> QPushButton:
         button = QPushButton(title)
         
-        if(style == None):
+        if style == None :
             button.setStyleSheet(self.BUTTON_STYLE)
         else:
             button.setStyleSheet(style)
