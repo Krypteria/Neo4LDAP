@@ -65,13 +65,17 @@ class GraphNode(QGraphicsEllipseItem):
         super().mouseMoveEvent(event)
 
         scene = self.scene()
-        if not scene :
+        if not scene:
             return
         
-        for item in scene.selectedItems():
-            if isinstance(item, GraphNode) :
-                for edge in item.edges:
-                    edge.update_edge_position()
+        selected_nodes = []
+        for item in self.scene().selectedItems():
+            if isinstance(item, GraphNode) and item.scene() is not None:
+                selected_nodes.append(item)
+
+        for node in selected_nodes:
+            for edge in node.edges:
+                edge.update_edge_position()
 
     def update_visual_cue(self) -> None:
         color = ""

@@ -440,19 +440,25 @@ class GraphView(QGraphicsView):
 
     def clear_graph(self) -> None:
         for edge in self.edges:
-            if edge.scene() is self.scene :
+            if edge.scene() is self.scene:
                 self.scene.removeItem(edge)
-            if edge.arrow_head.scene() is self.scene :
+            if edge.arrow_head.scene() is self.scene:
                 self.scene.removeItem(edge.arrow_head)
-            if edge.label.scene() is self.scene :
+            if(edge.label.scene() is self.scene):
                 self.scene.removeItem(edge.label)
 
         for node in self.nodes.values():
-            if node.scene() is self.scene :
+            if node.scene() is self.scene:
                 self.scene.removeItem(node)
+            if hasattr(node, "text") and node.text and node.text.scene() is self.scene:
+                self.scene.removeItem(node.text)
+            if hasattr(node, "count_text") and node.count_text and node.count_text.scene() is self.scene:
+                self.scene.removeItem(node.count_text)
 
         self.nodes.clear()
         self.edges.clear() 
+
+        self.scene.update() 
 
     def build_graph(self, graph, root_node, inbound_check) -> None:
         self.clear_graph()
