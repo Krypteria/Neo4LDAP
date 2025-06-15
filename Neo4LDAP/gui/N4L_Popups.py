@@ -133,7 +133,7 @@ class N4LFileExplorer(Popups):
             N4LMessageBox("Error", "The specified path is not valid")
 
     def add_selected_files(self) -> None:
-        if self.first_time :
+        if len(self.selected_files) == 0:
             self.debug_panel.append("=== SELECTED FILES ===\n")
             self.first_time = False
 

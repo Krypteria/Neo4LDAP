@@ -1,6 +1,6 @@
 from PySide6.QtGui import QIcon, QFont, QPalette, QColor
 from PySide6.QtWidgets import QApplication
-from PySide6.QtCore import QObject, QThread, Signal
+from PySide6.QtCore import QObject, QThread, Signal, QEventLoop
 
 from Neo4LDAP.model.N4L_Common import Neo4jConnector
 from Neo4LDAP.gui.N4L_MainWindow import MainWindow
@@ -12,6 +12,7 @@ import json
 class ModelRequestWorker(QObject):
     task_started_signal = Signal()
     task_ended_signal = Signal()
+    success_signal  = Signal(object)
 
     def __init__(self, thread, func, *args, **kwargs):
         super().__init__()
@@ -23,9 +24,13 @@ class ModelRequestWorker(QObject):
     def run(self):
         try:
             self.task_started_signal.emit()
-            self.func(*self.args, **self.kwargs)
+            result = self.func(*self.args, **self.kwargs)
+            if("traceback" in result.lower()):
+                self.success_signal.emit(False)
+            else:    
+                self.success_signal.emit(True)
         except Exception:
-            pass # managed by controller
+            self.success_signal.emit(False)
         finally:
             self.task_ended_signal.emit()
             self.thread.quit()
@@ -64,7 +69,9 @@ class N4LController():
     def get_instance(cls) -> object:
         return cls._instance
     
-    def run_in_new_thread(self, informational_popup, task, *args, **kwargs) -> None:
+    def run_in_new_thread(self, informational_popup, wait, task, *args, **kwargs) -> bool:
+        return_value = None
+
         thread = QThread()
         worker = ModelRequestWorker(thread, task, *args, **kwargs)
         worker.moveToThread(thread)
@@ -76,22 +83,34 @@ class N4LController():
             worker.task_started_signal.connect(popup.show)
             worker.task_ended_signal.connect(popup.close)
 
-        thread.started.connect(worker.run)
-
         def cleanup() -> None:
-            thread.wait()
-
             worker.deleteLater()
             thread.deleteLater()
 
-        # Cleanup and schedule to delete
+        loop = QEventLoop()
+
+        def store_return(value):
+            nonlocal return_value
+            return_value = value
+            loop.quit()
+
+        if(wait):
+            worker.success_signal.connect(store_return)
+
         thread.finished.connect(cleanup)
+        thread.started.connect(worker.run)
         thread.start()
+        
+        if(wait):
+            loop.exec()
+
+        return return_value
     
     # Login methods
     def login(self, username, password, bolt_uri) -> None:
-        Neo4jConnector.connect_to_neo4j(username, password, bolt_uri)
-        self.main_window.init_gui_after_login()
+        success = self.run_in_new_thread(True, True, Neo4jConnector.connect_to_neo4j, username, password, bolt_uri)
+        if(success):
+            self.main_window.init_gui_after_login()
 
     def init_gui(self) -> None:
         self.main_window.showMaximized()
@@ -133,12 +152,12 @@ class N4LController():
     # Ingestor
     def ingest_data_to_neo4j(self, json_files, is_legacy) -> None:
         from Neo4LDAP.model.N4L_Parser import upload_data
-        self.run_in_new_thread(False, upload_data, json_files, is_legacy)
+        self.run_in_new_thread(False, False, upload_data, json_files, is_legacy)
 
     # LDAP View
     def request_LDAP_query(self, query_value, attribute_list, raw_query) -> None: 
         from Neo4LDAP.model.N4L_Cypher import perform_query
-        self.run_in_new_thread(True, perform_query, query_value, attribute_list, raw_query)
+        self.run_in_new_thread(True, False, perform_query, query_value, attribute_list, raw_query)
 
     def redraw_LDAP_result_table(self, queryOutput) -> None:
         self.main_window.redraw_LDAP_result_table(queryOutput)
@@ -188,7 +207,7 @@ class N4LController():
             targeted_check = True
         
         from Neo4LDAP.model.N4L_ACLs import check_acls
-        self.run_in_new_thread(True, check_acls, name_value, acl_list, depth, source_value, target_value, exclusion_list, inbound_check, targeted_check)
+        self.run_in_new_thread(True, False, check_acls, name_value, acl_list, depth, source_value, target_value, exclusion_list, inbound_check, targeted_check)
 
     def redraw_ACL_graph(self, graph, root_node, inbound_check) -> None:
         self.main_window.redraw_ACL_graph(graph, root_node, inbound_check)
@@ -200,22 +219,22 @@ class N4LController():
         from Neo4LDAP.model.N4L_Cypher import perform_query
         self.change_to_LDAPView()
         self.main_window.add_query_to_panel(query_value)
-        self.run_in_new_thread(True, perform_query, query_value, attribute_list, raw_query)
+        self.run_in_new_thread(True, False, perform_query, query_value, attribute_list, raw_query)
 
     def request_inbound_graph_from_node(self, root_node) -> None:
         from Neo4LDAP.model.N4L_ACLs import check_acls
         self.main_window.add_inbound_to_panel(root_node)
-        self.run_in_new_thread(True, check_acls, root_node, ["all"], '', "", "", None, True)
+        self.run_in_new_thread(True, False, check_acls, root_node, ["all"], '', "", "", None, True)
 
     def request_outbound_graph_from_node(self, root_node) -> None:
         from Neo4LDAP.model.N4L_ACLs import check_acls
         self.main_window.add_outbound_to_panel(root_node)
-        self.run_in_new_thread(True, check_acls, root_node, ["all"], '', "", "", None, False)
+        self.run_in_new_thread(True, False, check_acls, root_node, ["all"], '', "", "", None, False)
 
     def repeat_request_with_exclusion(self, excluded_node_list) -> None:
         from Neo4LDAP.model.N4L_ACLs import check_acls
         name_value, acl_list, depth_value, source_value, target_value, exclusion_list, inbound_check = self.main_window.repeat_request_with_exclusion(excluded_node_list)
-        self.run_in_new_thread(True, check_acls, name_value, acl_list, depth_value, source_value, target_value, exclusion_list, inbound_check)
+        self.run_in_new_thread(True, False, check_acls, name_value, acl_list, depth_value, source_value, target_value, exclusion_list, inbound_check)
     
     def put_target(self, target) -> None:
         self.main_window.put_target(target)

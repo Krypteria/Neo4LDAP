@@ -43,8 +43,6 @@ class Neo4jConnector:
                 count = session.run(f"MATCH (n:{on_premise_item}) RETURN count(n) AS count").single()["count"]
                 neo4j_stats[on_premise_item] = count
 
-           
-
             return neo4j_stats
     
     @staticmethod

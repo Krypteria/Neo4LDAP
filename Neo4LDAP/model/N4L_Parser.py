@@ -351,8 +351,7 @@ def upload_data(json_files, is_legacy) -> None:
                 push_debug_info("    [✘] {file}".format(file = file_name))
                 exception_on_upload = True
 
-                from Neo4LDAP.gui.N4L_Popups import N4LMessageBox
-                N4LMessageBox("Error", traceback.format_exc(), controller.retrieve_main_window(), 600, 500)
+                controller.notify_error(traceback.format_exc())
                 
                 break
         
@@ -391,12 +390,20 @@ def upload_data(json_files, is_legacy) -> None:
                 except:
                     push_debug_info("    [✘] {file}".format(file = file_name))
                     exception_on_upload = True
+                    break          
 
-                    from Neo4LDAP.gui.N4L_Popups import N4LMessageBox
-                    N4LMessageBox("Error", traceback.format_exc(), controller.retrieve_main_window(), 600, 500)
-
-                    break
+            if(exception_on_upload):
+                break
 
             push_debug_info("")
+
+        if(not exception_on_upload):
+            push_debug_info("=== COMPLETED ===\n")
+        else:
+            push_debug_info("=== ERROR ===\n")
+            
+            controller.notify_error(traceback.format_exc())
+    else:
+        push_debug_info("=== ERROR ===\n")
 
     controller.update_neo4j_db_stats()
