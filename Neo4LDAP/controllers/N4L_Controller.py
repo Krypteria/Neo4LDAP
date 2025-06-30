@@ -25,7 +25,7 @@ class ModelRequestWorker(QObject):
         try:
             self.task_started_signal.emit()
             result = self.func(*self.args, **self.kwargs)
-            if("traceback" in result.lower()):
+            if(result != None and "traceback" in result.lower()):
                 self.success_signal.emit(False)
             else:    
                 self.success_signal.emit(True)
