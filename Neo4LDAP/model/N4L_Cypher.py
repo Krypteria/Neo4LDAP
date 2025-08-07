@@ -411,7 +411,7 @@ def parse_record(record, attributes, raw) -> str:
     return ldap_output
 
 def execute_query(query, attributes, raw) -> str:
-    with Neo4jConnector.driver.session() as session:
+    with Neo4jConnector.driver.session(database=Neo4jConnector.database) as session:
         try:
             result = session.run(query)
         except:

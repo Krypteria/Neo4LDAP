@@ -4,12 +4,14 @@ import traceback
 
 class Neo4jConnector:
     driver = None
+    database = "neo4j"
 
     @staticmethod
-    def connect_to_neo4j(username, password, uri) -> object:
+    def connect_to_neo4j(username, password, database, uri) -> object:
         try:
+            Neo4jConnector.database = database
             Neo4jConnector.driver = GraphDatabase.driver(uri, auth=(username, password), encrypted=False)
-            with Neo4jConnector.driver.session() as session:
+            with Neo4jConnector.driver.session(database=Neo4jConnector.database) as session:
                 session.run("MATCH (n) RETURN n LIMIT 1")
         except:
             from Neo4LDAP.controllers.N4L_Controller import N4LController
@@ -19,7 +21,7 @@ class Neo4jConnector:
 
     @staticmethod
     def retrieve_neo4j_stats() -> dict:
-        with Neo4jConnector.driver.session() as session:
+        with Neo4jConnector.driver.session(database=Neo4jConnector.database) as session:
             neo4j_stats = {}
 
             # ACL types
@@ -47,5 +49,5 @@ class Neo4jConnector:
     
     @staticmethod
     def clear_neo4j_db_data() -> None:
-        with Neo4jConnector.driver.session() as session:
+        with Neo4jConnector.driver.session(database=Neo4jConnector.database) as session:
             session.run("MATCH (n) DETACH DELETE n")

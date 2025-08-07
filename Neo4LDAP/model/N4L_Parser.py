@@ -21,7 +21,7 @@ def create_nodes(data, data_type) -> None:
         SET u += row.Properties
         """
     
-        with Neo4jConnector.driver.session() as session:
+        with Neo4jConnector.driver.session(database=Neo4jConnector.database) as session:
             session.run(cypher, rows=batch)
 
 # Post processing
@@ -34,7 +34,7 @@ def process_laps_sync() -> None:
     """
 
     laps_computers = ""
-    with Neo4jConnector.driver.session() as session:
+    with Neo4jConnector.driver.session(database=Neo4jConnector.database) as session:
         result_laps = session.run(cypher)
         laps_computers = [record["ObjectIdentifier"] for record in result_laps]
 
@@ -46,7 +46,7 @@ def process_laps_sync() -> None:
     """
 
     privileged_groups = ""
-    with Neo4jConnector.driver.session() as session:
+    with Neo4jConnector.driver.session(database=Neo4jConnector.database) as session:
         result_groups = session.run(cypher)
         privileged_groups = [record["ObjectIdentifier"] for record in result_groups]
 
@@ -69,7 +69,7 @@ def process_laps_sync() -> None:
         MATCH (c:Computer {objectid: pair.computer_id})
         MERGE (g)-[:SyncLAPSPassword]->(c)
         """
-        with Neo4jConnector.driver.session() as session:
+        with Neo4jConnector.driver.session(database=Neo4jConnector.database) as session:
             session.run(cypher, pairs=pairs)
 
 def process_aces(data) -> None:
@@ -91,7 +91,7 @@ def process_aces(data) -> None:
             MATCH (dst {{objectid: row.TargetID}})
             MERGE (src)-[r:{rel_type}]->(dst)
             """
-            with Neo4jConnector.driver.session() as session:
+            with Neo4jConnector.driver.session(database=Neo4jConnector.database) as session:
                 session.run(cypher, rows=batch)
 
 def process_trusts(data):
@@ -119,7 +119,7 @@ def process_trusts(data):
             {trust}
             """
 
-            with Neo4jConnector.driver.session() as session:
+            with Neo4jConnector.driver.session(database=Neo4jConnector.database) as session:
                 session.run(cypher, target_domain=target_domain, domain_id=domain_id)
 
 def process_primary_memberships(data):
@@ -143,7 +143,7 @@ def process_primary_memberships(data):
         MATCH (group {objectid: row.GroupSID})
         MERGE (member)-[:MemberOf]->(group)
         """
-        with Neo4jConnector.driver.session() as session:
+        with Neo4jConnector.driver.session(database=Neo4jConnector.database) as session:
             session.run(cypher, rows=batch)
 
 # # Sessions and remoting
@@ -167,7 +167,7 @@ def process_remote_accounts(data, relationship_key, relationship_type, source_no
         MERGE (source)-[:{relationship_type}]->(target)
         """
         
-        with Neo4jConnector.driver.session() as session:
+        with Neo4jConnector.driver.session(database=Neo4jConnector.database) as session:
             session.run(cypher, rows=batch)
 
 def process_rdp_users(data):
@@ -222,7 +222,7 @@ def process_relationships(data, relationship_key, relationship_type, node_id = "
         MERGE (source)-[:{relationship_type}]->(target)
         """
         
-        with Neo4jConnector.driver.session() as session:
+        with Neo4jConnector.driver.session(database=Neo4jConnector.database) as session:
             session.run(cypher, rows=batch)
 
 def process_gplinks(data):
@@ -258,7 +258,7 @@ def process_delegation(data, relationship_key, relationship_type, target_node_id
         MERGE (source)-[:{relationship_type}]->(target)
         """
         
-        with Neo4jConnector.driver.session() as session:
+        with Neo4jConnector.driver.session(database=Neo4jConnector.database) as session:
             session.run(cypher, rows=batch)
 
 def process_delegation_for_user(data, relationship_key, relationship_type):
@@ -281,7 +281,7 @@ def process_delegation_for_user(data, relationship_key, relationship_type):
         MERGE (source)-[:{relationship_type}]->(target)
         """
         
-        with Neo4jConnector.driver.session() as session:
+        with Neo4jConnector.driver.session(database=Neo4jConnector.database) as session:
             session.run(cypher, rows=batch)
 
 def process_constrained_delegation(data):

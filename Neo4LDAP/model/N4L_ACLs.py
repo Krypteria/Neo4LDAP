@@ -279,7 +279,7 @@ def draw_acl_graph(graph, name, inbound_check) -> None:
     controller.redraw_ACL_graph(graph, root_node, inbound_check)
 
 def retrieve_acls_by_depth(acl_graph, name, root_node, acl_list, depth, level, exclusion_list = None) -> None:
-    with Neo4jConnector.driver.session() as session:
+    with Neo4jConnector.driver.session(database=Neo4jConnector.database) as session:
         try:
             query = """
             MATCH (n) 
@@ -300,7 +300,7 @@ def retrieve_acls_by_depth(acl_graph, name, root_node, acl_list, depth, level, e
             controller.notify_error(traceback.format_exc())
 
 def retrieve_acls_by_target(acl_graph, source_node, target_node, acl_list, exclusion_list = None) -> None:
-    with Neo4jConnector.driver.session() as session:
+    with Neo4jConnector.driver.session(database=Neo4jConnector.database) as session:
         try:
             query = """
             MATCH (n)
@@ -346,7 +346,7 @@ def retrieve_acls_by_target(acl_graph, source_node, target_node, acl_list, exclu
             controller.notify_error(traceback.format_exc())
 
 def retrieve_inbound_acls(acl_graph, name, root_node, acl_list, exclusion_list = None) -> None:
-    with Neo4jConnector.driver.session() as session:
+    with Neo4jConnector.driver.session(database=Neo4jConnector.database) as session:
         try:
             query = """
             MATCH (n) 

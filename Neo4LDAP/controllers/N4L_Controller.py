@@ -107,8 +107,8 @@ class N4LController():
         return return_value
     
     # Login methods
-    def login(self, username, password, bolt_uri) -> None:
-        success = self.run_in_new_thread(True, True, Neo4jConnector.connect_to_neo4j, username, password, bolt_uri)
+    def login(self, username, password, database, bolt_uri) -> None:
+        success = self.run_in_new_thread(True, True, Neo4jConnector.connect_to_neo4j, username, password, database, bolt_uri)
         if(success):
             self.main_window.init_gui_after_login()
 

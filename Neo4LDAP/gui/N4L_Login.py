@@ -27,7 +27,7 @@ class LoginWindow(ViewerApp):
         # LOGIN FORM
         login_frame = QFrame(self)
         login_frame.setStyleSheet(self.QFRAME_STYLE)
-        login_frame.setFixedSize(350, 400)
+        login_frame.setFixedSize(350, 430)
 
         vertical_layout = QVBoxLayout(login_frame)
         vertical_layout.setContentsMargins(30, 30, 30, 30)
@@ -50,6 +50,8 @@ class LoginWindow(ViewerApp):
         self.password_input.setEchoMode(QLineEdit.Password)
         self.password_input.setText("neo4j")
 
+        self.database_input = self.create_text_field("Neo4j database (default: neo4j)")
+
         self.bolt_uri_input = self.create_text_field("Neo4j Bolt port")
         self.bolt_uri_input.setText("bolt://localhost:7687")
 
@@ -67,6 +69,8 @@ class LoginWindow(ViewerApp):
         vertical_layout.addSpacing(5)
         vertical_layout.addWidget(self.password_input)
         vertical_layout.addSpacing(5)
+        vertical_layout.addWidget(self.database_input)
+        vertical_layout.addSpacing(5)
         vertical_layout.addWidget(self.bolt_uri_input)
         vertical_layout.addItem(QSpacerItem(20, 15, QSizePolicy.Minimum, QSizePolicy.Fixed))
 
@@ -79,4 +83,4 @@ class LoginWindow(ViewerApp):
         self.setLayout(main_layout)
 
     def on_login_button_clicked(self) -> None: 
-        self.controller.login(self.username_input.text(), self.password_input.text(), self.bolt_uri_input.text())
+        self.controller.login(self.username_input.text(), self.password_input.text(), self.database_input.text(), self.bolt_uri_input.text())
