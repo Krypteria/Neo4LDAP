@@ -261,11 +261,15 @@ class ACLGraph:
         node_type.remove("Base")
 
         node_id = node.get("objectid", "UNKNOWN")
+
+        if not node_type:
+            node_type = [None]
         
         if node_type[0] == "Domain" :
-            return node.get("domain", "UNKNOWN"), node_type[0], node_id
+            fullname = node.get("domain") or node.get("objectid") or "UNKNOWN" 
+            return fullname, node_type[0], node_id
         else:
-            fullname = node.get("name", "UNKNOWN")
+            fullname = node.get("name") or node.get("objectid") or "UNKNOWN"
 
             return fullname, node_type[0], node_id
 
@@ -285,7 +289,7 @@ def retrieve_acls_by_depth(acl_graph, name, root_node, acl_list, depth, level, e
             MATCH (n) 
             WHERE toUpper(n.name) = toUpper('{name}') 
             MATCH (m) 
-            WHERE NOT m.name = n.name 
+            WHERE NOT coalesce(m.name, '') = n.name 
             MATCH p=(n)-[r:{acl}*..1]->(m)
             RETURN p as path
             """.format(name = name, acl = acl_list)
@@ -352,7 +356,7 @@ def retrieve_inbound_acls(acl_graph, name, root_node, acl_list, exclusion_list =
             MATCH (n) 
             WHERE toUpper(n.name) = toUpper('{name}') 
             MATCH (m) 
-            WHERE NOT m.name = n.name 
+            WHERE NOT coalesce(m.name, '') = n.name 
             MATCH p=(n)<-[r:{acl}*..1]-(m)
             RETURN p as path
             """.format(name = name, acl = acl_list)

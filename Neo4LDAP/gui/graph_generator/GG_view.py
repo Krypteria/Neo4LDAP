@@ -79,7 +79,7 @@ class GraphView(QGraphicsView):
         elif node_type == "Container" :
             color = "#9D5C48"
         else:
-            color = "#c21289"
+            color = "#706c6f"
 
         return color 
 

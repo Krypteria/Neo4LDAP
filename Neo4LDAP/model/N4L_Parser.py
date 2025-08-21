@@ -74,8 +74,9 @@ def run_match_in_neo4j(session, cypher):
 def create_nodes(session, data, data_type) -> None:
     cypher = f"""
     UNWIND $rows AS row
-    MERGE (u:{data_type}:Base {{objectid: row.ObjectIdentifier}})
+    MERGE (u:Base {{objectid: row.ObjectIdentifier}})
     SET u += row.Properties
+    SET u:{data_type}
     """
 
     run_merge_in_neo4j(session, cypher, data)
@@ -139,8 +140,8 @@ def process_laps_sync(session) -> None:
     if pairs:
         cypher = """
         UNWIND $pairs AS pair
-        MATCH (group:Group {objectid: pair.group_id})
-        MATCH (computer:Computer {objectid: pair.computer_id})
+        MERGE (group:Group:Base {objectid: pair.group_id})
+        MERGE (computer:Computer:Base {objectid: pair.computer_id})
         MERGE (group)-[:SyncLAPSPassword]->(computer)
         """
 
@@ -160,8 +161,8 @@ def process_aces(session, data) -> None:
     for rel_type, rel_data in grouped_by_type.items():
         cypher = f"""
         UNWIND $rows AS row
-        MATCH (src:Base {{objectid: row.PrincipalSID}})
-        MATCH (dst:Base {{objectid: row.TargetID}})
+        MERGE (src:Base {{objectid: row.PrincipalSID}})
+        MERGE (dst:Base {{objectid: row.TargetID}})
         MERGE (src)-[r:{rel_type}]->(dst)
         """
         
@@ -187,8 +188,8 @@ def process_trusts(session, data):
                 """
 
             cypher = f"""
-            MATCH (target_domain:Base {{objectid: $target_domain}})
-            MATCH (domain_id:Base {{objectid: $domain_id}})
+            MERGE (target_domain:Base:Domain {{objectid: $target_domain}})
+            MERGE (domain_id:Base:Domain {{objectid: $domain_id}})
             {trust}
             """
 
@@ -210,8 +211,8 @@ def process_primary_memberships(session, data):
 
     cypher = """
     UNWIND $rows AS row
-    MATCH (member:Base {objectid: row.MemberSID})
-    MATCH (group:Group {objectid: row.GroupSID})
+    MERGE (member:Base {objectid: row.MemberSID})
+    MERGE (group:Group:Base {objectid: row.GroupSID})
     MERGE (member)-[:MemberOf]->(group)
     """
     
@@ -232,8 +233,8 @@ def process_remote_accounts(session, data, relationship_key, relationship_type, 
 
     cypher = f"""
     UNWIND $rows AS row
-    MATCH (source:Base {{objectid: row.source_SID}})
-    MATCH (target:Base {{objectid: row.target_SID}})
+    MERGE (source:Base {{objectid: row.source_SID}})
+    MERGE (target:Base {{objectid: row.target_SID}})
     MERGE (source)-[:{relationship_type}]->(target)
     """
     
@@ -285,8 +286,8 @@ def process_relationships(session, data, relationship_key, relationship_type, no
 
     cypher = f"""
     UNWIND $rows AS row
-    MATCH (source:Base {{objectid: row.source_SID}})
-    MATCH (target:Base {{objectid: row.target_SID}})
+    MERGE (source:Base {{objectid: row.source_SID}})
+    MERGE (target:Base {{objectid: row.target_SID}})
     MERGE (source)-[:{relationship_type}]->(target)
     """
 
@@ -319,8 +320,8 @@ def process_delegation(session, data, relationship_key, relationship_type, targe
 
     cypher = f"""
     UNWIND $rows AS row
-    MATCH (source:Base {{objectid: row.source_SID}})
-    MATCH (target:Base {{objectid: row.target_SID}})
+    MERGE (source:Base {{objectid: row.source_SID}})
+    MERGE (target:Base {{objectid: row.target_SID}})
     MERGE (source)-[:{relationship_type}]->(target)
     """
 
@@ -340,8 +341,8 @@ def process_delegation_for_user(session, data, relationship_key, relationship_ty
 
     cypher = f"""
     UNWIND $rows AS row
-    MATCH (source:Base {{objectid: row.source_SID}})
-    MATCH (target:Base {{objectid: row.target_SID}})
+    MERGE (source:Base {{objectid: row.source_SID}})
+    MERGE (target:Base {{objectid: row.target_SID}})
     MERGE (source)-[:{relationship_type}]->(target)
     """
     run_merge_in_neo4j(session, cypher, relationships)
