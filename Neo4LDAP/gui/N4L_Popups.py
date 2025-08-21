@@ -98,7 +98,20 @@ class N4LFileExplorer(Popups):
         self.select_files_button = self.create_button("Add JSON files", self.add_selected_files)        
         self.confirm_button = self.create_button("Upload", self.confirm_selection)
         self.close_button = self.create_button("Close", self.close)
+
+        self.workers_label = self.create_label("Workers", True)
+        self.retries_label = self.create_label("Retries", True)
+
+        self.workers_input = self.create_text_field(None, "10")
+        self.retries_input = self.create_text_field(None, "15")
         
+        upload_options_buttons_layout = QHBoxLayout()
+        upload_options_buttons_layout.addWidget(checkbox_container)
+        upload_options_buttons_layout.addWidget(self.workers_label)
+        upload_options_buttons_layout.addWidget(self.workers_input)
+        upload_options_buttons_layout.addWidget(self.retries_label)
+        upload_options_buttons_layout.addWidget(self.retries_input)
+
         options_buttons_layout = QHBoxLayout()
         options_buttons_layout.addWidget(self.confirm_button)
         options_buttons_layout.addWidget(self.close_button)
@@ -106,11 +119,11 @@ class N4LFileExplorer(Popups):
         explorer_layout.addWidget(title_label)
         explorer_layout.addLayout(path_bar_layout)
         explorer_layout.addWidget(self.view)
-        explorer_layout.addSpacing(10)
-        explorer_layout.addWidget(checkbox_container)
-        explorer_layout.addSpacing(10)
         explorer_layout.addWidget(self.select_files_button)
         explorer_layout.addWidget(self.debug_panel)
+        explorer_layout.addSpacing(10)
+        explorer_layout.addLayout(upload_options_buttons_layout)
+        explorer_layout.addSpacing(10)
         explorer_layout.addLayout(options_buttons_layout)
 
         self.view.setMinimumHeight(300)
@@ -151,7 +164,7 @@ class N4LFileExplorer(Popups):
 
     def confirm_selection(self) -> None:
         self.debug_panel.append("\n=== UPLOADING FILES TO NEO4J ===\n")
-        self.controller.ingest_data_to_neo4j(list(self.selected_files), self.legacy_check.isChecked())
+        self.controller.ingest_data_to_neo4j(list(self.selected_files), int(self.workers_input.text()), int(self.retries_input.text()), self.legacy_check.isChecked())
         self.selected_files.clear()
 
     def push_debug_info(self, message) -> None:

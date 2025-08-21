@@ -150,9 +150,9 @@ class N4LController():
     # ---
 
     # Ingestor
-    def ingest_data_to_neo4j(self, json_files, is_legacy) -> None:
+    def ingest_data_to_neo4j(self, json_files, workers, retries, is_legacy) -> None:
         from Neo4LDAP.model.N4L_Parser import upload_data
-        self.run_in_new_thread(False, False, upload_data, json_files, is_legacy)
+        self.run_in_new_thread(False, False, upload_data, json_files, workers, retries, is_legacy)
 
     # LDAP View
     def request_LDAP_query(self, query_value, attribute_list, raw_query) -> None: 

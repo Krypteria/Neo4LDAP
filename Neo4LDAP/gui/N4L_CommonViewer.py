@@ -257,12 +257,15 @@ class Styles(QWidget):
 
 
 class QWidgetFactory(Styles):
-    def create_text_field(self, text = None) -> QLineEdit:
+    def create_text_field(self, placeholder = None, text = None) -> QLineEdit:
         input_field = QLineEdit()
         input_field.setStyleSheet(self.INPUT_STYLE)
         input_field.setContextMenuPolicy(Qt.NoContextMenu)
+        if placeholder != None :
+            input_field.setPlaceholderText(placeholder)
+
         if text != None :
-            input_field.setPlaceholderText(text)
+            input_field.setText(text)
 
         return input_field
     

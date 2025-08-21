@@ -49,5 +49,23 @@ class Neo4jConnector:
     
     @staticmethod
     def clear_neo4j_db_data() -> None:
+        queries = [
+            "DROP INDEX user_name_index IF EXISTS",
+            "DROP INDEX computer_name_index IF EXISTS",
+            "DROP INDEX group_name_index IF EXISTS",
+            "DROP INDEX gpo_name_index IF EXISTS",
+            "DROP INDEX container_name_index IF EXISTS",
+            "DROP INDEX ou_name_index IF EXISTS",
+            "DROP CONSTRAINT computer_objectid_constraint IF EXISTS",
+            "DROP CONSTRAINT group_objectid_constraint IF EXISTS",
+            "DROP CONSTRAINT user_objectid_constraint IF EXISTS",
+            "DROP CONSTRAINT gpo_objectid_constraint IF EXISTS",
+            "DROP CONSTRAINT container_objectid_constraint IF EXISTS",
+            "DROP CONSTRAINT ou_objectid_constraint IF EXISTS"
+        ]
+
         with Neo4jConnector.driver.session(database=Neo4jConnector.database) as session:
+            for query in queries:
+                session.run(query)
+
             session.run("MATCH (n) DETACH DELETE n")

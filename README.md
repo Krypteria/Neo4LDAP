@@ -39,6 +39,10 @@ This allows Neo4LDAP to **coexist with BloodHound** and be used as a practical a
 
 
 > 📘 To maximize the effectiveness of Neo4LDAP and gain a deeper understanding of how it handles special cases and internal logic, it is highly recommended to read through the full [project wiki](https://github.com/Krypteria/Neo4LDAP/wiki). The documentation covers key design decisions, usage examples, and query behaviors that may not be immediately apparent.
+`
+# Recommendations
+
+With the current parsing and ingestion method, it is recommended not to upload JSON files larger than 150 MB, as this may affect memory efficiency. If you have a larger JSON file, it is advisable to split it into chunks using [ShredHound](https://github.com/ustayready/ShredHound) before uploading them.
 
 # Installation
 
@@ -52,7 +56,7 @@ conda activate neo4ldap
 To install Neo4LDAP, install the following Python dependencies within the conda environment using `pip`:
 
 ```bash
-pip install networkx neo4j PySide6
+pip install networkx neo4j-rust-ext PySide6
 ```
 
 It is recommended to define the following shell alias in .bashrc, .zshrc, or equivalent shell configuration:

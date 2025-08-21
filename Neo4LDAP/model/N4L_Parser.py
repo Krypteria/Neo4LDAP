@@ -1,54 +1,128 @@
 from collections import defaultdict
+from concurrent.futures import ThreadPoolExecutor, as_completed
+from neo4j.exceptions import TransientError
 
 from Neo4LDAP.controllers.N4L_Controller import N4LController
 from Neo4LDAP.model.N4L_Common import *
 
+import time
 import json
 import os
 
-# Utilities 
-def chunked_data(data, size):
-    for i in range(0, len(data), size):
-        yield data[i:i + size]
+MAX_WORKERS = 10
+MAX_RETRIES = 15
 
+# Utilities 
+def generate_chunks(data):
+    chunks = []
+    chunks_num = (min(MAX_WORKERS, len(data)))
+    chunks_len = len(data) // chunks_num
+
+    ini = 0
+    end = chunks_len
+    for _ in range (0, chunks_num - 1):
+        chunks.append(data[ini:end])
+        ini += chunks_len
+        end += chunks_len
+
+    chunks.append(data[ini:])
+    return chunks
+
+def run_merge_pairs_in_neo4j(session, cypher, pairs):
+    try:
+        for attempt in range(MAX_RETRIES):
+            try:
+                session.run(cypher, pairs=pairs)
+                break
+            except TransientError:
+                if attempt < MAX_RETRIES - 1:
+                    time.sleep(0.1 * (attempt + 1))
+                else:
+                    raise RuntimeError(traceback.format_exc())
+    except Exception:
+        raise RuntimeError(traceback.format_exc())
+    
+def run_merge_in_neo4j(session, cypher, data):
+    try:
+        for attempt in range(MAX_RETRIES):
+            try:
+                session.run(cypher, rows=data)
+                break
+            except TransientError:
+                if attempt < MAX_RETRIES - 1:
+                    time.sleep(0.1 * (attempt + 1))
+                else:
+                    raise RuntimeError(traceback.format_exc())
+    except Exception:
+        raise RuntimeError(traceback.format_exc())
+
+def run_match_in_neo4j(session, cypher):
+    try:
+        for attempt in range(MAX_RETRIES):
+            try:
+                result = session.run(cypher)
+                return result
+            except TransientError:
+                if attempt < MAX_RETRIES - 1:
+                    time.sleep(0.1 * (attempt + 1))
+                else:
+                    RuntimeError(traceback.format_exc())
+    except Exception:
+        raise RuntimeError(traceback.format_exc())
 # ---
 
-def create_nodes(data, data_type) -> None:
-    for batch in chunked_data(data, 100):
-        cypher = f"""
-        UNWIND $rows AS row
-        MERGE (u:{data_type}:Base {{objectid: row.ObjectIdentifier}})
-        SET u += row.Properties
-        """
-    
-        with Neo4jConnector.driver.session(database=Neo4jConnector.database) as session:
-            session.run(cypher, rows=batch)
-
-# Post processing
-def process_laps_sync() -> None:
-    # Get computers with LAPS
-    cypher = """
-    MATCH (c:Computer)
-    WHERE c.haslaps = true
-    RETURN c.objectid AS ObjectIdentifier
+def create_nodes(session, data, data_type) -> None:
+    cypher = f"""
+    UNWIND $rows AS row
+    MERGE (u:{data_type}:Base {{objectid: row.ObjectIdentifier}})
+    SET u += row.Properties
     """
 
-    laps_computers = ""
-    with Neo4jConnector.driver.session(database=Neo4jConnector.database) as session:
-        result_laps = session.run(cypher)
-        laps_computers = [record["ObjectIdentifier"] for record in result_laps]
+    run_merge_in_neo4j(session, cypher, data)
+
+def generate_indexes(session) -> None:
+    indexes = [
+        "CREATE CONSTRAINT base_objectid_constraint IF NOT EXISTS FOR (b:Base) REQUIRE b.objectid IS UNIQUE",
+        "CREATE CONSTRAINT computer_objectid_constraint IF NOT EXISTS FOR (c:Computer) REQUIRE c.objectid IS UNIQUE",
+        "CREATE CONSTRAINT group_objectid_constraint IF NOT EXISTS FOR (g:Group) REQUIRE g.objectid IS UNIQUE",
+        "CREATE CONSTRAINT user_objectid_constraint IF NOT EXISTS FOR (u:User) REQUIRE u.objectid IS UNIQUE",
+        "CREATE CONSTRAINT gpo_objectid_constraint IF NOT EXISTS FOR (g:GPO) REQUIRE g.objectid IS UNIQUE",
+        "CREATE CONSTRAINT container_objectid_constraint IF NOT EXISTS FOR (c:Container) REQUIRE c.objectid IS UNIQUE",
+        "CREATE CONSTRAINT ou_objectid_constraint IF NOT EXISTS FOR (o:OU) REQUIRE o.objectid IS UNIQUE",
+        "CREATE INDEX user_name_index IF NOT EXISTS FOR (u:User) ON (u.name)",
+        "CREATE INDEX computer_name_index IF NOT EXISTS FOR (c:Computer) ON (c.name)",
+        "CREATE INDEX group_name_index IF NOT EXISTS FOR (g:Group) ON (g.name)",
+        "CREATE INDEX gpo_name_index IF NOT EXISTS FOR (g:GPO) ON (g.name)",
+        "CREATE INDEX container_name_index IF NOT EXISTS FOR (c:Container) ON (c.name)",
+        "CREATE INDEX ou_name_index IF NOT EXISTS FOR (o:OU) ON (o.name)"
+    ]
+
+    for index in indexes:
+        session.run(index)        
+    
+    session.run("CALL db.awaitIndexes()")
+
+# Post processing
+def process_laps_sync(session) -> None:
+    # Get computers with LAPS
+    cypher = """
+    MATCH (computer:Computer)
+    WHERE computer.haslaps = true
+    RETURN computer.objectid AS ObjectIdentifier
+    """
+
+    result_laps = run_match_in_neo4j(session, cypher)   
+    laps_computers = [record["ObjectIdentifier"] for record in result_laps]
 
     # Get AdminSDHolder groups (admincount = True)
     cypher = """
-    MATCH (g:Group)
-    WHERE g.admincount = true
-    RETURN g.objectid AS ObjectIdentifier
+    MATCH (group:Group)
+    WHERE group.admincount = true
+    RETURN group.objectid AS ObjectIdentifier
     """
 
-    privileged_groups = ""
-    with Neo4jConnector.driver.session(database=Neo4jConnector.database) as session:
-        result_groups = session.run(cypher)
-        privileged_groups = [record["ObjectIdentifier"] for record in result_groups]
+    result_groups = run_match_in_neo4j(session, cypher)
+    privileged_groups = [record["ObjectIdentifier"] for record in result_groups]
 
     pairs = []
     default_dcsync_groups = ["-512", "-516", "-519", "-544"]
@@ -65,14 +139,14 @@ def process_laps_sync() -> None:
     if pairs:
         cypher = """
         UNWIND $pairs AS pair
-        MATCH (g:Group {objectid: pair.group_id})
-        MATCH (c:Computer {objectid: pair.computer_id})
-        MERGE (g)-[:SyncLAPSPassword]->(c)
+        MATCH (group:Group {objectid: pair.group_id})
+        MATCH (computer:Computer {objectid: pair.computer_id})
+        MERGE (group)-[:SyncLAPSPassword]->(computer)
         """
-        with Neo4jConnector.driver.session(database=Neo4jConnector.database) as session:
-            session.run(cypher, pairs=pairs)
 
-def process_aces(data) -> None:
+        run_merge_pairs_in_neo4j(session, cypher, pairs)
+
+def process_aces(session, data) -> None:
     grouped_by_type = defaultdict(list)
 
     for node in data:
@@ -84,17 +158,16 @@ def process_aces(data) -> None:
             })
 
     for rel_type, rel_data in grouped_by_type.items():
-        for batch in chunked_data(rel_data, 100):
-            cypher = f"""
-            UNWIND $rows AS row
-            MATCH (src {{objectid: row.PrincipalSID}})
-            MATCH (dst {{objectid: row.TargetID}})
-            MERGE (src)-[r:{rel_type}]->(dst)
-            """
-            with Neo4jConnector.driver.session(database=Neo4jConnector.database) as session:
-                session.run(cypher, rows=batch)
+        cypher = f"""
+        UNWIND $rows AS row
+        MATCH (src:Base {{objectid: row.PrincipalSID}})
+        MATCH (dst:Base {{objectid: row.TargetID}})
+        MERGE (src)-[r:{rel_type}]->(dst)
+        """
+        
+        run_merge_in_neo4j(session, cypher, rel_data)
 
-def process_trusts(data):
+def process_trusts(session, data):
     for node in data:
         domain_id = node["ObjectIdentifier"]
 
@@ -114,15 +187,14 @@ def process_trusts(data):
                 """
 
             cypher = f"""
-            MATCH (target_domain {{objectid: $target_domain}})
-            MATCH (domain_id {{objectid: $domain_id}})
+            MATCH (target_domain:Base {{objectid: $target_domain}})
+            MATCH (domain_id:Base {{objectid: $domain_id}})
             {trust}
             """
 
-            with Neo4jConnector.driver.session(database=Neo4jConnector.database) as session:
-                session.run(cypher, target_domain=target_domain, domain_id=domain_id)
+            session.run(cypher, target_domain=target_domain, domain_id=domain_id)
 
-def process_primary_memberships(data):
+def process_primary_memberships(session, data):
     relationships = []
 
     for node in data:
@@ -136,18 +208,17 @@ def process_primary_memberships(data):
                 "GroupSID": primary_group_sid
             })
 
-    for batch in chunked_data(relationships, 100):
-        cypher = """
-        UNWIND $rows AS row
-        MATCH (member {objectid: row.MemberSID})
-        MATCH (group {objectid: row.GroupSID})
-        MERGE (member)-[:MemberOf]->(group)
-        """
-        with Neo4jConnector.driver.session(database=Neo4jConnector.database) as session:
-            session.run(cypher, rows=batch)
+    cypher = """
+    UNWIND $rows AS row
+    MATCH (member:Base {objectid: row.MemberSID})
+    MATCH (group:Group {objectid: row.GroupSID})
+    MERGE (member)-[:MemberOf]->(group)
+    """
+    
+    run_merge_in_neo4j(session, cypher, relationships)
 
 # # Sessions and remoting
-def process_remote_accounts(data, relationship_key, relationship_type, source_node_id = "ObjectIdentifier"):
+def process_remote_accounts(session, data, relationship_key, relationship_type, source_node_id = "ObjectIdentifier"):
     relationships = []
 
     for node in data:
@@ -159,44 +230,42 @@ def process_remote_accounts(data, relationship_key, relationship_type, source_no
                 "target_SID": target_id
             })
 
-    for batch in chunked_data(relationships, 100):
-        cypher = f"""
-        UNWIND $rows AS row
-        MATCH (source {{objectid: row.source_SID}})
-        MATCH (target {{objectid: row.target_SID}})
-        MERGE (source)-[:{relationship_type}]->(target)
-        """
-        
-        with Neo4jConnector.driver.session(database=Neo4jConnector.database) as session:
-            session.run(cypher, rows=batch)
+    cypher = f"""
+    UNWIND $rows AS row
+    MATCH (source:Base {{objectid: row.source_SID}})
+    MATCH (target:Base {{objectid: row.target_SID}})
+    MERGE (source)-[:{relationship_type}]->(target)
+    """
+    
+    run_merge_in_neo4j(session, cypher, relationships)
 
-def process_rdp_users(data):
-    process_remote_accounts(data, "RemoteDesktopUsers", "CanRDP")
+def process_rdp_users(session, data):
+    process_remote_accounts(session, data, "RemoteDesktopUsers", "CanRDP")
 
-def process_sessions(data):
-    process_remote_accounts(data, "RegistrySessions", "HasSession", "UserSID")
+def process_sessions(session, data):
+    process_remote_accounts(session, data, "RegistrySessions", "HasSession", "UserSID")
 
-def process_local_admins(data):
-    process_remote_accounts(data, "LocalAdmins", "AdminTo")
+def process_local_admins(session, data):
+    process_remote_accounts(session, data, "LocalAdmins", "AdminTo")
 
-def process_ps_remote(data):
-    process_remote_accounts(data, "PSRemoteUsers", "CanPSRemote")
+def process_ps_remote(session, data):
+    process_remote_accounts(session, data, "PSRemoteUsers", "CanPSRemote")
 
-def process_execute_dcom(data):
-    process_remote_accounts(data, "DcomUsers", "ExecuteDCOM")
+def process_execute_dcom(session, data):
+    process_remote_accounts(session, data, "DcomUsers", "ExecuteDCOM")
 
-def process_computer_remoting(data, is_legacy):
-    process_sessions(data)
+def process_computer_remoting(session, data, is_legacy):
+    process_sessions(session, data)
     
     if is_legacy :
-        process_rdp_users(data)
-        process_local_admins(data)
-        process_execute_dcom(data)
-        process_ps_remote(data)
+        process_rdp_users(session, data)
+        process_local_admins(session, data)
+        process_execute_dcom(session, data)
+        process_ps_remote(session, data)
 
 # # ---
 
-def process_relationships(data, relationship_key, relationship_type, node_id = "ObjectIdentifier"):
+def process_relationships(session, data, relationship_key, relationship_type, node_id = "ObjectIdentifier"):
     relationships = []
 
     for node in data:
@@ -214,31 +283,29 @@ def process_relationships(data, relationship_key, relationship_type, node_id = "
                     "target_SID": target_id
                 })
 
-    for batch in chunked_data(relationships, 100):
-        cypher = f"""
-        UNWIND $rows AS row
-        MATCH (source {{objectid: row.source_SID}})
-        MATCH (target {{objectid: row.target_SID}})
-        MERGE (source)-[:{relationship_type}]->(target)
-        """
-        
-        with Neo4jConnector.driver.session(database=Neo4jConnector.database) as session:
-            session.run(cypher, rows=batch)
+    cypher = f"""
+    UNWIND $rows AS row
+    MATCH (source:Base {{objectid: row.source_SID}})
+    MATCH (target:Base {{objectid: row.target_SID}})
+    MERGE (source)-[:{relationship_type}]->(target)
+    """
 
-def process_gplinks(data):
-    process_relationships(data, "Links", "GPLink", "GUID")
+    run_merge_in_neo4j(session, cypher, relationships)
 
-def process_child_objects(data):
-    process_relationships(data, "ChildObjects", "Contains")
+def process_gplinks(session, data):
+    process_relationships(session, data, "Links", "GPLink", "GUID")
 
-def process_memberships(data, data_type):
+def process_child_objects(session, data):
+    process_relationships(session, data, "ChildObjects", "Contains")
+
+def process_memberships(session, data, data_type):
     if data_type == "Group" :
-        process_relationships(data, "Members", "MemberOf")
+        process_relationships(session, data, "Members", "MemberOf")
     elif data_type == "User" or data_type == "Computer" :
-        process_primary_memberships(data)
+        process_primary_memberships(session, data)
 
 # # Delegation
-def process_delegation(data, relationship_key, relationship_type, target_node_id = "ObjectIdentifier"):
+def process_delegation(session, data, relationship_key, relationship_type, target_node_id = "ObjectIdentifier"):
     relationships = []
 
     for node in data:
@@ -250,18 +317,16 @@ def process_delegation(data, relationship_key, relationship_type, target_node_id
                 "target_SID": target_id[target_node_id]
             })
 
-    for batch in chunked_data(relationships, 100):
-        cypher = f"""
-        UNWIND $rows AS row
-        MATCH (source {{objectid: row.source_SID}})
-        MATCH (target {{objectid: row.target_SID}})
-        MERGE (source)-[:{relationship_type}]->(target)
-        """
-        
-        with Neo4jConnector.driver.session(database=Neo4jConnector.database) as session:
-            session.run(cypher, rows=batch)
+    cypher = f"""
+    UNWIND $rows AS row
+    MATCH (source:Base {{objectid: row.source_SID}})
+    MATCH (target:Base {{objectid: row.target_SID}})
+    MERGE (source)-[:{relationship_type}]->(target)
+    """
 
-def process_delegation_for_user(data, relationship_key, relationship_type):
+    run_merge_in_neo4j(session, cypher, relationships)
+
+def process_delegation_for_user(session, data, relationship_key, relationship_type):
     relationships = []
 
     for node in data:
@@ -273,32 +338,29 @@ def process_delegation_for_user(data, relationship_key, relationship_type):
                 "target_SID": target_id
             })
 
-    for batch in chunked_data(relationships, 100):
-        cypher = f"""
-        UNWIND $rows AS row
-        MATCH (source {{objectid: row.source_SID}})
-        MATCH (target {{objectid: row.target_SID}})
-        MERGE (source)-[:{relationship_type}]->(target)
-        """
-        
-        with Neo4jConnector.driver.session(database=Neo4jConnector.database) as session:
-            session.run(cypher, rows=batch)
+    cypher = f"""
+    UNWIND $rows AS row
+    MATCH (source:Base {{objectid: row.source_SID}})
+    MATCH (target:Base {{objectid: row.target_SID}})
+    MERGE (source)-[:{relationship_type}]->(target)
+    """
+    run_merge_in_neo4j(session, cypher, relationships)
 
-def process_constrained_delegation(data):
-    process_delegation(data, "AllowedToDelegate", "AllowedToDelegate")
+def process_constrained_delegation(session, data):
+    process_delegation(session, data, "AllowedToDelegate", "AllowedToDelegate")
 
-def process_rbcd(data):
-    process_delegation(data, "AllowedToAct", "AllowedToAct")
+def process_rbcd(session, data):
+    process_delegation(session, data, "AllowedToAct", "AllowedToAct")
 
-def process_computer_delegation(data):
-    process_constrained_delegation(data)
-    process_rbcd(data)
+def process_computer_delegation(session, data):
+    process_constrained_delegation(session, data)
+    process_rbcd(session, data)
 
-def process_user_constrained_delegation(data):
-    process_delegation_for_user(data, "AllowedToDelegate", "AllowedToDelegate")
+def process_user_constrained_delegation(session, data):
+    process_delegation_for_user(session, data, "AllowedToDelegate", "AllowedToDelegate")
 
-def process_user_delegation(data):
-    process_user_constrained_delegation(data)
+def process_user_delegation(session, data):
+    process_user_constrained_delegation(session, data)
 
 # # ---
 # ---
@@ -328,9 +390,36 @@ def push_debug_info(message) -> None:
     controller = N4LController().get_instance()
     controller.push_upload_debug_info(message)
 
-def upload_data(json_files, is_legacy) -> None:
-    controller = N4LController().get_instance()
+def postprocess(session, data, data_type, is_legacy) -> None:
+    process_memberships(session, data, data_type)
+    process_aces(session, data)
 
+    if data_type == "Container" or data_type == "OU" :
+        process_child_objects(session, data)
+        process_gplinks(session, data)
+
+    if data_type == "Computer" :
+        process_computer_remoting(session, data, is_legacy)
+        process_computer_delegation(session, data)
+
+    if data_type == "User" :
+        process_user_delegation(session, data)
+
+    if data_type == "Domain" :
+        process_trusts(session, data)
+
+    if data_type == "Group" :
+        process_laps_sync(session)
+
+def upload_data(json_files, workers, retries, is_legacy) -> None:
+    global MAX_RETRIES, MAX_WORKERS
+
+    MAX_RETRIES = retries
+    MAX_WORKERS = workers
+
+    current_exception = ""
+
+    controller = N4LController().get_instance()
     exception_on_upload = False
 
     grouped_files = defaultdict(list)
@@ -339,71 +428,79 @@ def upload_data(json_files, is_legacy) -> None:
         file_name = os.path.basename(path)
         grouped_files[dir_path].append((path, file_name))
 
+    push_debug_info("::: GENERATING INDEXES :::\n")
+    with Neo4jConnector.driver.session(database=Neo4jConnector.database) as session:
+        generate_indexes(session)
+    push_debug_info("    [✔] Indexes generated\n")
+
     push_debug_info("::: CREATING NODES :::\n")
     for group_path, file_list in grouped_files.items():
         push_debug_info("  # {directory_path}".format(directory_path = group_path))
         for full_path, file_name in file_list:
             try:
                 data, data_type = retrieve_json_info(full_path)
-                create_nodes(data, data_type)
+                with Neo4jConnector.driver.session(database=Neo4jConnector.database) as session:
+                    create_nodes(session, data, data_type)
+
                 push_debug_info("    [✔] {file}".format(file = file_name))
             except:
+                current_exception = traceback.format_exc()
                 push_debug_info("    [✘] {file}".format(file = file_name))
                 exception_on_upload = True
 
-                controller.notify_error(traceback.format_exc())
-                
                 break
         
         push_debug_info("")
-
+    
     if not exception_on_upload:
+        
         push_debug_info("::: POST PROCESSING :::\n")
-
         for group_path, file_list in grouped_files.items():
             push_debug_info("  # {directory_path}".format(directory_path = group_path))
             for full_path, file_name in file_list:
                 try:
-                    data, data_type = retrieve_json_info(full_path)
+                    data, data_type = retrieve_json_info(full_path)    
+                    chunks = generate_chunks(data)
 
-                    process_memberships(data, data_type)
-                    process_aces(data)
+                    push_debug_info("    [#] Post-Processing {file}".format(file = file_name))
                     
-                    if data_type == "Container" or data_type == "OU" :
-                        process_child_objects(data)
-                        process_gplinks(data)
+                    # One session - Chunk (MAX_WORKERS)
+                    sessions = []
+                    for _ in range(0, len(chunks)):
+                        sessions.append(Neo4jConnector.driver.session(database=Neo4jConnector.database))
 
-                    if data_type == "Computer" :
-                        process_computer_remoting(data, is_legacy)
-                        process_computer_delegation(data)
+                    # MAX_WORKERS Threads
+                    with ThreadPoolExecutor(max_workers=MAX_WORKERS) as executor:
+                        futures = []
 
-                    if data_type == "User" :
-                        process_user_delegation(data)
+                        for i, chunk in enumerate(chunks):
+                            futures.append(executor.submit(postprocess, sessions[i], chunk, data_type, is_legacy))
 
-                    if data_type == "Domain" :
-                        process_trusts(data)
-
-                    if data_type == "Group" :
-                        process_laps_sync()
+                        for future in as_completed(futures):
+                            future.result()  
 
                     push_debug_info("    [✔] {file}".format(file = file_name))
+
+                    for session in sessions:
+                        session.close()
+
                 except:
+                    current_exception = traceback.format_exc()
                     push_debug_info("    [✘] {file}".format(file = file_name))
                     exception_on_upload = True
                     break          
-
+            
+            push_debug_info("")
             if(exception_on_upload):
                 break
-
-            push_debug_info("")
 
         if(not exception_on_upload):
             push_debug_info("=== COMPLETED ===\n")
         else:
             push_debug_info("=== ERROR ===\n")
-            
-            controller.notify_error(traceback.format_exc())
+            controller.notify_error(current_exception)
     else:
         push_debug_info("=== ERROR ===\n")
+        controller.notify_error(current_exception)
 
     controller.update_neo4j_db_stats()
