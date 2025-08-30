@@ -233,15 +233,24 @@ class LDAPViewerApp(ViewerApp):
 
     def edit_custom_query(self, query_json, index) -> None:
         from Neo4LDAP.gui.N4L_Popups import N4LQueryPopup
-        N4LQueryPopup(self.controller, self.controller.retrieve_main_window(), index, query_json["name"], query_json["description"], query_json["query"], ",".join(query_json["attributes"]))
+        
+        attributes = ""
+        if query_json["attributes"] != None:
+            attributes = ",".join(query_json["attributes"])
+
+        N4LQueryPopup(self.controller, self.controller.retrieve_main_window(), index, query_json["name"], query_json["description"], query_json["query"], attributes)
 
     def delete_custom_query(self, index) -> None:
         self.controller.delete_custom_query(index)
 
     def run_custom_query(self, query_json) -> None:
         self.query_input.setText(query_json["query"])
-        self.attributes_input.setText(",".join(query_json["attributes"]))
 
+        attributes = ""
+        if query_json["attributes"] != None:
+            attributes = ",".join(query_json["attributes"])
+
+        self.attributes_input.setText(attributes)
         self.on_query_button_clicked()
 
     # ---
