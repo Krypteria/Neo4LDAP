@@ -31,7 +31,8 @@ These features improve clarity when analyzing access paths, ACLs, and privilege 
 To support existing ecosystems, Neo4LDAP includes:
 
 - A **data ingestion feature** for importing BloodHound JSON files  
-- Support for both **Legacy** and **Community Edition (CE)** formats  
+- Support for both **Legacy** and **Community Edition (CE)** formats
+- Fast multithreaded ingestion
 
 This allows Neo4LDAP to **coexist with BloodHound** and be used as a practical alternative in the Active Directory cybersecurity field.
 
@@ -46,17 +47,34 @@ With the current parsing and ingestion method, it is recommended not to upload J
 
 # Installation
 
-It is recommended to use a Conda virtual environment with Python 3.9.13 or higher to isolate the installation and avoid dependency conflicts:
+Neo4LDAP uses **Neo4j** as its database. To use the tool, you must install and run a Neo4j instance. For installation instructions, please refer to the [official Neo4j installation guide](https://neo4j.com/docs/operations-manual/2025.08/installation/)
+
+Once Neo4j is installed, start it by running:
+```bash
+neo4j console
+```
+
+To install **Neo4LDAP**, it is recommended to use a Conda virtual environment with Python 3.9.13 or higher to isolate the installation and avoid dependency conflicts:
 
 ```bash
 conda create -n neo4ldap python=3.9.13
 conda activate neo4ldap
 ```
 
-To install Neo4LDAP, install the following Python dependencies within the conda environment using `pip`:
+Once the conda environment is activated, install the following Python dependencies using `pip`:
 
 ```bash
 pip install networkx neo4j-rust-ext PySide6
+```
+
+Depending on the display server protocol you are using, you must install some extra dependencies. To check which display server protocol you are using, execute the following command:
+```bash
+echo $XDG_SESSION_TYPE
+```
+
+If that command returns ```x11```, you must install the following dependency:
+```bash
+sudo apt install libxcb-cursor0
 ```
 
 It is recommended to define the following shell alias in .bashrc, .zshrc, or equivalent shell configuration:
@@ -71,10 +89,23 @@ neo4ldap() {
 
 source ~/.bashrc
 ```
+# Known Issues
+Neo4LDAP is designed to run on a 96 DPI screen. If you are running it on a higher DPI screen, it is recommended to start Neo4LDAP as follows:
+```bash
+QT_SCALE_FACTOR=<VALUE> neo4ldap
+```
+
+For example, if your DPI is 200, the value should be calculated as 96 / 200 = 0.48:
+
+```bash
+QT_SCALE_FACTOR=0.48 neo4ldap
+```
+
+This will display Neo4LDAP at 96 DPI without the need to change your OS settings.
 
 # Demo
 
-[![NeoLDAP: Overview and Capabilities](https://github.com/user-attachments/assets/3e7f943d-c8eb-4c60-b2b5-7368d3e4b2c5)](https://www.youtube.com/watch?v=5V22K3lDEFw)
+[![NeoLDAP: Overview and Capabilities](https://github.com/user-attachments/assets/3e7f943d-c8eb-4c60-b2b5-7368d3e4b2c5)](https://youtu.be/f2vkcroaBqg)
 
 
 # Acknowledgements
