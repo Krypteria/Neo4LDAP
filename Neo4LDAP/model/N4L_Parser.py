@@ -71,7 +71,7 @@ def run_match_in_neo4j(session, cypher):
         raise RuntimeError(traceback.format_exc())
 # ---
 
-def create_nodes(session, data, data_type) -> None:
+def create_nodes(session, data, data_type) -> None:   
     cypher = f"""
     UNWIND $rows AS row
     MERGE (u:Base {{objectid: row.ObjectIdentifier}})
@@ -266,21 +266,17 @@ def process_computer_remoting(session, data, is_legacy):
 
 # # ---
 
-def process_relationships(session, data, relationship_key, relationship_type, node_id = "ObjectIdentifier"):
+def process_contained(session, data, relationship_key, relationship_type, node_id = "ObjectIdentifier"):
     relationships = []
 
     for node in data:
         target_id = node["ObjectIdentifier"]
+        if(relationship_key in node and node[relationship_key] != None and node[relationship_key] != {}):
+            container_id = node[relationship_key][node_id]
 
-        for nodes in node.get(relationship_key, []):
-            if relationship_type == "Contains" :
+            if(container_id != None and container_id != "Null"):
                 relationships.append({
-                    "source_SID": target_id,
-                    "target_SID": nodes[node_id]
-                })
-            else:  
-                relationships.append({
-                    "source_SID": nodes[node_id],
+                    "source_SID": container_id,
                     "target_SID": target_id
                 })
 
@@ -293,11 +289,35 @@ def process_relationships(session, data, relationship_key, relationship_type, no
 
     run_merge_in_neo4j(session, cypher, relationships)
 
+def process_relationships(session, data, relationship_key, relationship_type, node_id = "ObjectIdentifier"):
+    relationships = []
+
+    for node in data:
+        target_id = node["ObjectIdentifier"]
+
+        for nodes in node.get(relationship_key, []):
+            relationships.append({
+                "source_SID": nodes[node_id],
+                "target_SID": target_id
+            })
+
+    cypher = f"""
+    UNWIND $rows AS row
+    MERGE (source:Base {{objectid: row.source_SID}})
+    MERGE (target:Base {{objectid: row.target_SID}})
+    MERGE (source)-[:{relationship_type}]->(target)
+    """
+
+    print(relationships)
+    print(cypher)
+
+    run_merge_in_neo4j(session, cypher, relationships)
+
 def process_gplinks(session, data):
     process_relationships(session, data, "Links", "GPLink", "GUID")
 
-def process_child_objects(session, data):
-    process_relationships(session, data, "ChildObjects", "Contains")
+def process_contained_objects(session, data):
+    process_contained(session, data, "ContainedBy", "Contains")
 
 def process_memberships(session, data, data_type):
     if data_type == "Group" :
@@ -393,10 +413,11 @@ def push_debug_info(message) -> None:
 
 def postprocess(session, data, data_type, is_legacy) -> None:
     process_memberships(session, data, data_type)
+    process_contained_objects(session, data)
+
     process_aces(session, data)
 
-    if data_type == "Container" or data_type == "OU" :
-        process_child_objects(session, data)
+    if data_type == "Container" or data_type == "OU" or data_type == "Domain" :
         process_gplinks(session, data)
 
     if data_type == "Computer" :

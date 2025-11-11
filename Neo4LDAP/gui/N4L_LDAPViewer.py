@@ -362,10 +362,13 @@ class LDAPViewerApp(ViewerApp):
         information_frame.setMaximumHeight(335)
 
         import_files_button = self.create_button("Upload", self.upload_files)
+        refresh_button = self.create_button("Refresh", self.refresh_neo4j_db_data)
         clear_button = self.create_button("Clear DB", self.clear_neo4j_db_data)
+        
 
         db_buttons_layout = QHBoxLayout()
         db_buttons_layout.addWidget(import_files_button)
+        db_buttons_layout.addWidget(refresh_button)
         db_buttons_layout.addWidget(clear_button)
 
         information_layout = QVBoxLayout(information_frame)
@@ -650,6 +653,9 @@ class LDAPViewerApp(ViewerApp):
         from Neo4LDAP.gui.N4L_Popups import N4LFileExplorer
         self.file_uploader = N4LFileExplorer(self.controller.retrieve_main_window(), self.controller)
         self.file_uploader.show()
+
+    def refresh_neo4j_db_data(self) -> None:
+        self.controller.update_neo4j_db_stats()
 
     def clear_neo4j_db_data(self) -> None:
         from Neo4LDAP.gui.N4L_Popups import N4LQuestionBox

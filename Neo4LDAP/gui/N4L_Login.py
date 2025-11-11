@@ -45,15 +45,19 @@ class LoginWindow(ViewerApp):
 
         self.username_input = self.create_text_field("Neo4j username")
         self.username_input.setText("neo4j")
+        self.username_input.setAlignment(Qt.AlignTop | Qt.AlignCenter)
 
         self.password_input = self.create_text_field("Neo4j password")
         self.password_input.setEchoMode(QLineEdit.Password)
         self.password_input.setText("neo4j")
+        self.password_input.setAlignment(Qt.AlignTop | Qt.AlignCenter)
 
         self.database_input = self.create_text_field("Neo4j database (default: neo4j)")
+        self.database_input.setAlignment(Qt.AlignTop | Qt.AlignCenter)
 
         self.bolt_uri_input = self.create_text_field("Neo4j Bolt port")
         self.bolt_uri_input.setText("bolt://localhost:7687")
+        self.bolt_uri_input.setAlignment(Qt.AlignTop | Qt.AlignCenter)
 
         login_button = self.create_button("Login", self.on_login_button_clicked)
         login_button.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)

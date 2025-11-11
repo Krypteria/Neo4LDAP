@@ -82,7 +82,7 @@ class ACLViewerApp(ViewerApp):
         left_layout.addWidget(exclusion_title)
         left_layout.addSpacing(5)
         left_layout.addWidget(exclusion_frame)
-        left_layout.addSpacing(5)
+        left_layout.addSpacing(10)
         left_layout.addWidget(search_button)
         left_layout.addStretch()
 
@@ -103,10 +103,42 @@ class ACLViewerApp(ViewerApp):
         graph_layout_aux = QVBoxLayout(graph_frame)
         graph_layout_aux.setContentsMargins(2, 2, 2, 2)
         graph_layout_aux.addWidget(self.graph_viewer)
+       
+        self.weight_modify_button_style = """
+            QPushButton {{
+                background-color: {background};
+                padding: 8px;
+                color: {text};
+                border-radius: 6px;
+                font-weight: bold;
+                border: 1px solid {border};
 
+            }}
+            QPushButton:hover {{
+                background-color: {hover};
+            }}
+            QPushButton:pressed {{
+                background-color: {background};
+            }}
+        """.format(background=self.BUTTON_BG, hover=self.BUTTON_HOVER, text=self.TEXT_COLOR, border=self.PANELS_BD)
+        
+
+        self.weight_modify_button = self.create_button("Weights", self.show_weights_popup, self.weight_modify_button_style)
+        self.weight_modify_button.setFixedSize(74, 40)
+
+        self.weight_modify_button.setParent(graph_frame)
+        self.weight_modify_button.raise_()
+        self.weight_modify_button.move(graph_frame.width() - 94, 10)
+
+        def weights_button_resize(event):
+            self.weight_modify_button.move(graph_frame.width() - 94, 10)
+            event.accept()
+        
+        graph_frame.resizeEvent = weights_button_resize
         graph_layout.addWidget(graph_frame)
 
         return right_panel
+
 
     def init_search_panel(self) -> QFrame:
         search_frame = QFrame()
@@ -375,6 +407,10 @@ class ACLViewerApp(ViewerApp):
     # ---
 
     # Popups
+    def show_weights_popup(self) -> None: 
+        from Neo4LDAP.gui.N4L_Popups import N4LWeights
+        N4LWeights(self.controller.retrieve_main_window(), self.controller, self.controller.retrieve_actual_acl_weights())
+
     def show_acl_help_popup(self) -> None: 
         from Neo4LDAP.gui.N4L_Popups import N4LMessageBox
         text = "The following ACLs are supported in Neo4LDAP:\n\n• All\n• FirstDegree\n\nExtended ACLs:\n\n"

@@ -1,4 +1,4 @@
-from PySide6.QtWidgets import QWidget, QVBoxLayout, QTextEdit, QHBoxLayout, QPushButton, QLineEdit, QLabel, QSplitter, QSizePolicy, QFrame, QMessageBox, QSpacerItem, QCheckBox
+from PySide6.QtWidgets import QWidget, QVBoxLayout, QTextEdit, QScrollArea, QHBoxLayout, QPushButton, QLineEdit, QLabel, QSplitter, QSizePolicy, QFrame, QMessageBox, QSpacerItem, QCheckBox
 from PySide6.QtCore import Qt, Signal, QObject, QThread
 
 import re 
@@ -30,7 +30,7 @@ class Styles(QWidget):
         self.SELECTION     = "#4c566a"
 
         # Buttons
-        self.BUTTON_BG     = "#5d7f99"
+        self.BUTTON_BG     = "#5985a3"
         self.BUTTON_HOVER  = "#516b80"
 
         # Ldap table and debug
@@ -54,7 +54,7 @@ class Styles(QWidget):
         """
 
         self.DISABLED_INPUT_STYLE = """
-            background-color: #3a3a3a; 
+            background-color: #3D4556; 
             padding: 5px; 
             color: black;
             border-radius: 5px; 
@@ -144,7 +144,7 @@ class Styles(QWidget):
                 border: 1px solid {border};
             }}
             {scrollbar}
-        """.format(background = self.TEXT_PANEL_BG, scrollbar = self.QSCROLLBAR_STYLE, border = self.TEXT_PANEL_BD)
+        """.format(background = self.SUBPANELS_BG, scrollbar = self.QSCROLLBAR_STYLE, border = self.TEXT_PANEL_BD)
 
         self.QMENU_STYLE = """
             QMenu {{
@@ -349,7 +349,7 @@ class ViewerApp(QWidgetFactory):
     def create_switch_buttons_layout(self) -> QHBoxLayout:
         switch_buttons_layout = QHBoxLayout()
         LDAPViewer_button = self.create_button("LDAP Viewer", self.change_to_LDAPView)
-        ACLViewer_button = self.create_button("ACLs Viewer", self.change_to_ACLView) 
+        ACLViewer_button = self.create_button("ACL Viewer", self.change_to_ACLView) 
 
         switch_buttons_layout.addWidget(LDAPViewer_button)
         switch_buttons_layout.addWidget(ACLViewer_button)

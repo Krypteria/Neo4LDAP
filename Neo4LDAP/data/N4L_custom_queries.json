@@ -1,0 +1,149 @@
+[
+    {
+        "name": "Enterprise Admins",
+        "description": "Retrieve all the Enterprise Admins",
+        "query": "(memberOf=ENTERPRISE ADMINS*)",
+        "attributes": null
+    },
+    {
+        "name": "Domain Admins",
+        "description": "Retrieve all the Domain Admins",
+        "query": "(memberOf=DOMAIN ADMINS*)",
+        "attributes": null
+    },
+    {
+        "name": "Domain Controllers",
+        "description": "Retrieve all the Domain Controllers",
+        "query": "(memberOf=DOMAIN CONTROLLERS*)",
+        "attributes": null
+    },
+    {
+        "name": "Computers with MSSQL SPN",
+        "description": "Retrieve all the Computers with MSSQL in the Service Principal Name",
+        "query": "(&(ObjectClass=Computer)(serviceprincipalname=MSSQL*)",
+        "attributes": null
+    },
+    {
+        "name": "Computers with HTTP SPN",
+        "description": "Retrieve all the Computers with HTTP in the Service Principal Name",
+        "query": "(&(ObjectClass=Computer)(serviceprincipalname=HTTP*)",
+        "attributes": null
+    },
+    {
+        "name": "Computers with description",
+        "description": "Retrieves all the Computers with a description",
+        "query": "(&(ObjectClass=Computer)(Description=*))",
+        "attributes": [
+            "cn",
+            "distinguishedname",
+            "description"
+        ]
+    },
+    {
+        "name": "Computers with LAPS",
+        "description": "Retrieve all the computers configured with LAPS",
+        "query": "(&(ObjectClass=Computer)(ms-mcs-admpwdexpirationtime=*))",
+        "attributes": null
+    },
+    {
+        "name": "LAPS passwords",
+        "description": "Retrieve all the LAPS passwords",
+        "query": "(&(ObjectClass=Computer)(ms-LAPS-Password=*))",
+        "attributes": [
+            "cn",
+            "ms-LAPS-Password",
+            "ms-mcs-admpwdexpirationtime"
+        ]
+    },
+    {
+        "name": "Windows Server 2019 computers",
+        "description": "Retrieve all the Computers with OS Windows Server 2019",
+        "query": "(&(ObjectClass=Computer)(operatingsystem=Windows Server 2019*)",
+        "attributes": null
+    },
+    {
+        "name": "Windows Server 2016 computers",
+        "description": "Retrieve all the Computers with OS Windows Server 2016",
+        "query": "(&(ObjectClass=Computer)(operatingsystem=Windows Server 2016*)",
+        "attributes": null
+    },
+    {
+        "name": "Windows Server 2012 computers",
+        "description": "Retrieve all the Computers with OS Windows Server 2012",
+        "query": "(&(ObjectClass=Computer)(operatingsystem=Windows Server 2012*)",
+        "attributes": null
+    },
+    {
+        "name": "Kerberos Unconstrained Delegation",
+        "description": "Retrieves all the Computers with Unconstrained Delegation enabled",
+        "query": "(&(ObjectClass=Computer)(unconstraineddelegation=true))",
+        "attributes": null
+    },
+    {
+        "name": "Kerberos Constrained Delegation",
+        "description": "Retrieves all the Identities configured for Constrained Delegation",
+        "query": "(trustedtoauth=true)",
+        "attributes": [
+            "cn",
+            "distinguishedname",
+            "trustedtoauth",
+            "allowedtodelegate"
+        ]
+    },
+    {
+        "name": "Users with description",
+        "description": "Retrieves all the User with a description",
+        "query": "(&(ObjectClass=User)(Description=*))",
+        "attributes": [
+            "cn",
+            "distinguishedname",
+            "description"
+        ]
+    },
+    {
+        "name": "Groups with description",
+        "description": "Retrieves all the Groups with a description",
+        "query": "(&(ObjectClass=Group)(Description=*))",
+        "attributes": [
+            "cn",
+            "distinguishedname",
+            "description"
+        ]
+    },
+    {
+        "name": "All OUs",
+        "description": "Retrieve all Organizational Units",
+        "query": "ObjectClass=OrganizationalUnit",
+        "attributes": null
+    },
+    {
+        "name": "All GPOs",
+        "description": "Retrieve all the Group Policy Containers",
+        "query": "ObjectClass=GroupPolicyContainer",
+        "attributes": null
+    },
+    {
+        "name": "All Containers",
+        "description": "Retrieve all the Containers",
+        "query": "ObjectClass=Container",
+        "attributes": null
+    },
+    {
+        "name": "All objects inside an OU",
+        "description": "Template to query objects inside an OU",
+        "query": "(&(OU=<OU CN>)(cn=<Target CN>))",
+        "attributes": null
+    },
+    {
+        "name": "All objects affected by a GPO",
+        "description": "Template to query objects affected by a GPO",
+        "query": "(&(GPO=<GPO CN>)(cn=<Target CN>))",
+        "attributes": null
+    },
+    {
+        "name": "All objects contained in a Container",
+        "description": "Template to query objects contained in a Container",
+        "query": "(&(Container=<Container CN>)(cn=<Target CN>))\n",
+        "attributes": null
+    }
+]

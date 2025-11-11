@@ -66,7 +66,10 @@ def adapt_ldap_item_to_cypher(member_key, member_value) -> tuple:
     elif member_key == "container" :
         cypher_key = "toUpper(container.name)"
     else:
-        cypher_key = "toUpper(n.{key})".format(key=member_key)
+        if("-" in member_key):
+            cypher_key = "toUpper(n.`{key}`)".format(key=member_key)
+        else:
+            cypher_key = "toUpper(n.{key})".format(key=member_key)
 
     if member_value == "TRUE" or member_value == "FALSE" :
         cypher_key = "n.{key}".format(key=member_key)
@@ -86,7 +89,10 @@ def adapt_attribute_to_cypher(member_key) -> str:
     elif member_key == "serviceprincipalnames" :
         cypher_key = "collect('serviceprincipalnames : ' + n.serviceprincipalnames) as serviceprincipalnames"
     else:
-        cypher_key = "n.{key}".format(key=member_key)
+        if("-" in member_key):
+            cypher_key = "n.`{key}`".format(key=member_key)
+        else:    
+            cypher_key = "n.{key}".format(key=member_key)
     
     return cypher_key
     
@@ -370,8 +376,10 @@ def format_by_attributes(attribute, remaining_attrs) -> str:
     else:
         item_key = adapt_attribute_to_cypher(attribute)
         if item_key in remaining_attrs :
-            attr_output += item_key.split(".")[1] + ": " + str(remaining_attrs[item_key]) + "\n"
-        
+            if("-" in item_key):
+                attr_output += item_key.split(".")[1].strip("`") + ": " + str(remaining_attrs[item_key]) + "\n"
+            else:      
+                attr_output += item_key.split(".")[1] + ": " + str(remaining_attrs[item_key]) + "\n"
 
     return attr_output
 

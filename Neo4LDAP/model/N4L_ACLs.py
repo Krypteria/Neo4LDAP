@@ -5,37 +5,65 @@ from collections import defaultdict
 import networkx as nx
 import heapq
 
-class ACLGraph:
-    
-    ACL_VALUE = {
-        "CanPSRemote": 4,
-        "CanRDP": 4,
-        "HasSession": 4,
-        "Contains": 1,
-        "DCSync": 3,
-        "DumpSMSAPassword": 4,
-        "ExecuteDCOM": 1,
-        "ForceChangePassword": 2,
-        "GenericAll": 3,
-        "GenericWrite": 3,
-        "GetChanges": 1,
-        "GetChangesAll": 1,
-        "GetChangesInFilteredSet": 1,
-        "GPLink": 1,
-        "Owns": 3,
-        "ReadGMSAPassword": 4,
-        "ReadLAPSPassword": 4,
-        "SyncLapsPassword": 4,
-        "WriteDACL": 3,
-        "WriteOwner": 3,
-        "WriteSPN": 2,
-        "AddMember": 4,
-        "AdmintTo": 4,
-        "AllowedToAct": 3,
-        "AllowedToDelegate": 3,
-        "MemberOf": 5,
-    }
+DEFAULT_ACL_VALUE = {
+    "CanPSRemote": 4,
+    "CanRDP": 4,
+    "HasSession": 4,
+    "Contains": 1,
+    "DCSync": 3,
+    "DumpSMSAPassword": 4,
+    "ExecuteDCOM": 1,
+    "ForceChangePassword": 2,
+    "GenericAll": 3,
+    "GenericWrite": 3,
+    "GetChanges": 1,
+    "GetChangesAll": 1,
+    "GetChangesInFilteredSet": 1,
+    "GPLink": 1,
+    "Owns": 3,
+    "ReadGMSAPassword": 4,
+    "ReadLAPSPassword": 4,
+    "SyncLapsPassword": 4,
+    "WriteDACL": 3,
+    "WriteOwner": 3,
+    "WriteSPN": 2,
+    "AddMember": 4,
+    "AdminTo": 4,
+    "AllowedToAct": 3,
+    "AllowedToDelegate": 3,
+    "MemberOf": 5,
+}
 
+CURRENT_ACL_VALUE = {
+    "CanPSRemote": 4,
+    "CanRDP": 4,
+    "HasSession": 4,
+    "Contains": 1,
+    "DCSync": 3,
+    "DumpSMSAPassword": 4,
+    "ExecuteDCOM": 1,
+    "ForceChangePassword": 2,
+    "GenericAll": 3,
+    "GenericWrite": 3,
+    "GetChanges": 1,
+    "GetChangesAll": 1,
+    "GetChangesInFilteredSet": 1,
+    "GPLink": 1,
+    "Owns": 3,
+    "ReadGMSAPassword": 4,
+    "ReadLAPSPassword": 4,
+    "SyncLapsPassword": 4,
+    "WriteDACL": 3,
+    "WriteOwner": 3,
+    "WriteSPN": 2,
+    "AddMember": 4,
+    "AdminTo": 4,
+    "AllowedToAct": 3,
+    "AllowedToDelegate": 3,
+    "MemberOf": 5,
+}
+
+class ACLGraph:
     def __init__(self):
         self.graph = nx.DiGraph()
         self.depth_by_node = {}
@@ -69,7 +97,6 @@ class ACLGraph:
     def compute_best_paths_with_cycles(self, start_node) -> dict:
         best_path   = defaultdict(lambda: None)
         best_parent = {}
-        protected_nodes = set()
         best_path[start_node] = []
 
         # bigger sum -> less path length -> bigger minimum value 
@@ -91,22 +118,9 @@ class ACLGraph:
 
                 # If a node has multiple acls, the bigger value is taken as the weight
                 for acl in self.acls_by_nodes[current][neighbor]: 
-                    weight = max(weight, self.ACL_VALUE.get(acl, 1))
+                    weight = max(weight, CURRENT_ACL_VALUE.get(acl, 1))
 
                 new_path = current_path + [weight]
-
-                # Always include first degree targets if the weighted acl is at least 3
-                if current == start_node and weight >= 3:
-                    best_path[neighbor] = [weight]
-                    best_parent[neighbor] = (current, acls)
-                    protected_nodes.add(neighbor)
-
-                    heapq.heappush(heap, (make_priority([weight]), neighbor))
-                    continue
-
-                # First degree node
-                if neighbor in protected_nodes:
-                    continue
 
                 if self.is_path_better(new_path, best_path[neighbor]):
                     best_path[neighbor] = new_path
@@ -126,20 +140,22 @@ class ACLGraph:
         
     def compute_shadow_relationships(self) -> None:
         hidden_counts = {}
+        shadow_relationships = {}
+
         for source, targets in self.acls_by_nodes.items():
             for target, _ in targets.items():
                 acls = ",".join(self.acls_by_nodes[source][target])
 
-                if "MemberOf" in acls:
-                    continue
-                
-                if self.graph.has_edge(source, target) :
+                if self.graph.has_edge(source, target):
                     if self.graph[source][target].get("relationship") != acls :
                         hidden_counts[source] = hidden_counts.get(source, 0) + 1
+                        shadow_relationships.setdefault(source, []).append((target, acls))
                 else:
                     hidden_counts[source] = hidden_counts.get(source, 0) + 1
+                    shadow_relationships.setdefault(source, []).append((target, acls))
 
         nx.set_node_attributes(self.graph, hidden_counts, "shadow_relationships")
+        nx.set_node_attributes(self.graph, shadow_relationships, "shadow_relationships_list")
     
     def compute_dag_graph(self, name, inbound_check) -> None:
         dag = ACLGraph()
@@ -147,11 +163,11 @@ class ACLGraph:
 
         best_parent = self.compute_best_paths_with_cycles(name)
         
-        if not inbound_check :
+        if not inbound_check:
             for target, (source, acl_label) in best_parent.items():
                 dag.add_relationship(source, acl_label, target)
 
-                if self.creates_cycle(dag, source, target) :
+                if self.creates_cycle(dag, source, target):
                     dag.graph.remove_edge(source, target)
 
         elif inbound_check:
@@ -367,6 +383,18 @@ def retrieve_inbound_acls(acl_graph, name, root_node, acl_list, exclusion_list =
             controller = N4LController().get_instance()
             controller.notify_error(traceback.format_exc())
 
+def retrieve_actual_acl_weights() -> dict:
+    return CURRENT_ACL_VALUE
+
+def update_actual_acl_weights(actual_acl_weights) -> None:
+    global CURRENT_ACL_VALUE
+    CURRENT_ACL_VALUE = actual_acl_weights
+
+def reset_actual_acl_weights() -> dict:
+    global CURRENT_ACL_VALUE
+    CURRENT_ACL_VALUE = DEFAULT_ACL_VALUE
+    return CURRENT_ACL_VALUE
+
 def retrieve_acl_list(acls) -> list:
     controller = N4LController().get_instance()
     neo4j_acls = controller.retrieve_neo4j_stats()["ACL_Types"]
@@ -386,8 +414,7 @@ def retrieve_acl_list(acls) -> list:
     else:
         if acl_list_lower[0] == "all" :
             for acl in valid_acls.values():
-                if acl != "Contains" :
-                    acl_list += acl + "|"
+                acl_list += acl + "|"
             
             acl_list = acl_list[:-1]
         elif acl_list_lower[0] == "firstdegree" :

@@ -3,7 +3,7 @@ from PySide6.QtGui import QBrush, QColor, QFont
 from PySide6.QtCore import Qt
 
 class GraphNode(QGraphicsEllipseItem):
-    def __init__(self, x, y, label, node_type, node_id, color, shadow_relationships = 0, radius=20):
+    def __init__(self, x, y, label, node_type, node_id, color, shadow_relationships = 0, shadow_relationships_list = [], radius=20):
         super().__init__(-radius, -radius, radius * 2, radius * 2)
 
         self.radius = radius
@@ -14,6 +14,11 @@ class GraphNode(QGraphicsEllipseItem):
         self.subgraph_hidden = False
 
         self.set_hidden_count(shadow_relationships)
+
+        self.shadow_relationships_list = shadow_relationships_list
+        self.availaible_shadow_relationships = False
+        if(self.shadow_relationships_list != []):
+            self.availaible_shadow_relationships = True
 
         self.default_color = QColor(color)
         self.collapsed_color = QColor("#6A5473")
@@ -105,6 +110,11 @@ class GraphNode(QGraphicsEllipseItem):
         """)
         
         details_action = menu.addAction("Show details")
+
+        shadow_relationships_action = ""
+        if(self.availaible_shadow_relationships):
+            shadow_relationships_action = menu.addAction("Show shadow relationships")
+
         menu.addSeparator()
 
         toggle_action = ""
@@ -133,6 +143,8 @@ class GraphNode(QGraphicsEllipseItem):
             query = "(&(objectClass={node_type})(objectid={node_id}))".format(node_type = self.node_type, node_id = self.node_id)
 
             controller.request_LDAP_query_from_node(query, None, False)
+        elif selected == shadow_relationships_action:
+            controller.show_shadow_relationships(self.label, self.shadow_relationships_list)
         elif selected == inbound_action :
             controller.request_inbound_graph_from_node(self.label)
         elif selected == outbound_action :

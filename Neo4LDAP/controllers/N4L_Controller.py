@@ -63,6 +63,8 @@ class N4LController():
             self.load_custom_queries()
 
             self.main_window = MainWindow(self.get_instance())
+
+            self.load_acl_weights()
             self._initialized = True
 
     @classmethod
@@ -165,7 +167,7 @@ class N4LController():
     # # Custom Queries
     def load_custom_queries(self) -> None:
         data_path = self.retrieve_data_path_dir()
-        if os.path.exists(data_path) :
+        if os.path.exists(data_path):
             custom_queries_json_path = self.retrieve_data_path("N4L_custom_queries.json")
             if os.path.exists(custom_queries_json_path) :
                 with open(custom_queries_json_path, "r", encoding="utf-8") as custom_queries_file:
@@ -212,6 +214,50 @@ class N4LController():
     def redraw_ACL_graph(self, graph, root_node, inbound_check) -> None:
         self.main_window.redraw_ACL_graph(graph, root_node, inbound_check)
     
+    def load_acl_weights(self) -> None:
+        data_path = self.retrieve_data_path_dir()
+        if os.path.exists(data_path):
+            acl_weights_json_path = self.retrieve_data_path("N4L_acl_weights.json")
+            if os.path.exists(acl_weights_json_path) :
+                with open(acl_weights_json_path, "r", encoding="utf-8") as acl_weights_file:
+                    current_acl_weights_dict = json.load(acl_weights_file)
+                    self.update_actual_acl_weights(current_acl_weights_dict, False)
+            else:
+                self.save_acl_weights(self.retrieve_actual_acl_weights())
+        else:
+            os.mkdir(data_path)
+            self.save_acl_weights(self.retrieve_actual_acl_weights())
+
+    def save_acl_weights(self, current_acl_weights) -> None:
+        data_path = self.retrieve_data_path_dir()
+        if not os.path.exists(data_path) :
+            os.mkdir(data_path)
+
+        acl_weights_json_path = self.retrieve_data_path("N4L_acl_weights.json")
+        with open(acl_weights_json_path, "w", encoding="utf-8") as acl_weights_file:
+            json.dump(current_acl_weights, acl_weights_file, indent=4)
+
+    def retrieve_actual_acl_weights(self) -> dict:
+        from Neo4LDAP.model.N4L_ACLs import retrieve_actual_acl_weights
+        return retrieve_actual_acl_weights()
+    
+    def update_actual_acl_weights(self, actual_acl_weights, show_message=True) -> None:
+        from Neo4LDAP.model.N4L_ACLs import update_actual_acl_weights
+        update_actual_acl_weights(actual_acl_weights)
+        self.save_acl_weights(actual_acl_weights)
+
+        if show_message:
+            from Neo4LDAP.gui.N4L_Popups import N4LMessageBox
+            N4LMessageBox("ACE weights updated", "The weights associated with ACEs have been updated. Future searches will use the new weights.", self.retrieve_main_window())
+    
+    def reset_actual_acl_weights(self) -> None:
+        from Neo4LDAP.model.N4L_ACLs import reset_actual_acl_weights
+        default_acl_weights = reset_actual_acl_weights()
+        self.save_acl_weights(default_acl_weights)
+
+        from Neo4LDAP.gui.N4L_Popups import N4LMessageBox
+        N4LMessageBox("ACE weights restored", "The weights associated with ACLs have been restored to default values. Future searches will use the new weights.", self.retrieve_main_window())
+
     # ---
 
     # View node to model
@@ -241,6 +287,10 @@ class N4LController():
 
     def put_source(self, source) -> None:
         self.main_window.put_source(source)
+
+    def show_shadow_relationships(self, node, shadow_relationships_list) -> None:
+        from Neo4LDAP.gui.N4L_Popups import N4LShadowRelationshiphs
+        N4LShadowRelationshiphs(self.retrieve_main_window(), self, node, shadow_relationships_list)
 
     # ---
 
