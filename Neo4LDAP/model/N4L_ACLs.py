@@ -414,8 +414,9 @@ def retrieve_acl_list(acls) -> list:
     else:
         if acl_list_lower[0] == "all" :
             for acl in valid_acls.values():
-                acl_list += acl + "|"
-            
+                if acl != "Contains" :
+                    acl_list += acl + "|"
+
             acl_list = acl_list[:-1]
         elif acl_list_lower[0] == "firstdegree" :
             for acl in valid_acls.values():
