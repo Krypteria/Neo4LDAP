@@ -308,9 +308,6 @@ def process_relationships(session, data, relationship_key, relationship_type, no
     MERGE (source)-[:{relationship_type}]->(target)
     """
 
-    print(relationships)
-    print(cypher)
-
     run_merge_in_neo4j(session, cypher, relationships)
 
 def process_gplinks(session, data):
