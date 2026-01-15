@@ -231,12 +231,17 @@ def create_cypher_query(query, attribute_list) -> str:
     # 1- MATCH
     cypher_query = "MATCH (n)"
 
-    if re.search(r"\bou\b", query) or "organizationalunit" in query:
+    if re.search(r"\bou\b", query):
         cypher_query = "MATCH (ou:OU)-[:Contains]->(n)"
-    if re.search(r"\bgpo\b", query) or "grouppolicycontainer" in query :
+    if re.search(r"\bgpo\b", query):
         cypher_query = "MATCH (gpo:GPO)-[:GPLink]->(n)"
     if re.search(r"\bcontainer\b", query) :
         cypher_query = "MATCH (container:Container)-[:Contains]->(n)"
+
+    if "organizationalunit" in query:
+        cypher_query = "MATCH (ou:OU)"
+    if "grouppolicycontainer" in query :
+        cypher_query = "MATCH (gpo:GPO)"
 
         
     if re.search(r'\bmemberof\b', query) and re.search(r'\bmember\b', query):        
@@ -252,7 +257,8 @@ def create_cypher_query(query, attribute_list) -> str:
     cypher_query += "WHERE {where_clauses}\n".format(where_clauses = where_clauses)    
 
     # 3- OPTIONAL MATCH
-    cypher_query += "OPTIONAL MATCH (n)-[:MemberOf]->(g:Group)\nOPTIONAL MATCH (n)<-[:MemberOf]-(member)\n"
+    if("organizationalunit" not in query and "grouppolicycontainer" not in query):
+        cypher_query += "OPTIONAL MATCH (n)-[:MemberOf]->(g:Group)\nOPTIONAL MATCH (n)<-[:MemberOf]-(member)\n"
 
     # 4- WITH 
     if "grouppolicycontainer" in query : 
