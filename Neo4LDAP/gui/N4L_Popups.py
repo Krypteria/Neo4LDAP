@@ -14,7 +14,13 @@ class N4LFileExplorer(Popups):
         self.first_time = True
         self.selected_files = []
 
-        self.setMinimumSize(700, 500)
+        default_height = 825
+        _, screen_height = controller.retrieve_screen_dimensions()
+
+        if(screen_height < default_height):
+            default_height = screen_height - 67
+
+        self.setMinimumSize(700, default_height)
 
         title_label = self.create_label("Ingest JSON into Neo4j", True, self.MESSAGE_TITLE_STYLE_2, 40)
         title_label.setAlignment(Qt.AlignCenter)

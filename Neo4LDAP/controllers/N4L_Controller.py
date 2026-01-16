@@ -47,19 +47,20 @@ class N4LController():
 
     def __init__(self):
         if not self._initialized :
-            default_width, default_height = 1600, 900
-            screen_width, screen_height = 0,0
+            self.default_width, self.default_height = 1600, 900
+            self.screen_width, self.screen_height = 0,0
 
             # Temporal App to retrieve screen dimensions
             tmp_app = QApplication(sys.argv)
             screen = tmp_app.primaryScreen()
             screen_geometry = screen.availableGeometry()       
 
-            screen_width = screen_geometry.width()
-            screen_height = screen_geometry.height()
+            self.screen_width = screen_geometry.width()
+            self.screen_height = screen_geometry.height()
 
-            if(screen_width < default_width or screen_height < default_height):
-                os.environ["QT_SCALE_FACTOR"] = "0.85"
+            if(self.screen_width < self.default_width or self.screen_height < self.default_height):
+                if "QT_SCALE_FACTOR" not in os.environ:
+                    os.environ["QT_SCALE_FACTOR"] = "0.85"
 
             tmp_app.shutdown()
 
@@ -84,8 +85,8 @@ class N4LController():
             margin_width = 320
             margin_height = 67
 
-            window_width = max(100, screen_width - margin_width) 
-            window_height = max(100, screen_height - margin_height)
+            window_width = self.screen_width - margin_width
+            window_height = self.screen_height - margin_height
 
             self.main_window.setFixedSize(window_width, window_height)
 
@@ -150,6 +151,9 @@ class N4LController():
     # --- 
 
     # Path management and information
+    def retrieve_screen_dimensions(self) -> tuple:
+        return self.screen_width, self.screen_height
+    
     def retrieve_neo4j_stats(self) -> list:
         return Neo4jConnector.retrieve_neo4j_stats()
     
