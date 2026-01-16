@@ -44,6 +44,12 @@ class ACLViewerApp(ViewerApp):
         left_layout = QVBoxLayout(left_panel)
         left_layout.setAlignment(Qt.AlignTop)
 
+        scroll_content = QWidget()
+        scroll_content.setStyleSheet("background-color: {color}; border: none;".format(color = self.PANELS_BG))
+
+        scroll_layout = QVBoxLayout(scroll_content)
+        scroll_layout.setAlignment(Qt.AlignTop)
+
         switch_buttons_layout = self.create_switch_buttons_layout()
 
         search_title = self.create_label("SEARCH", False, self.TITLE_STYLE)
@@ -68,23 +74,31 @@ class ACLViewerApp(ViewerApp):
         self.source_input.textChanged.connect(self.targeted_search_changed)
         self.target_input.textChanged.connect(self.targeted_search_changed)
 
+        #Scrollable content
+        scroll_layout.addWidget(search_title)
+        scroll_layout.addSpacing(5)
+        scroll_layout.addWidget(search_frame)
+        scroll_layout.addSpacing(5)
+        scroll_layout.addWidget(targeted_search_title)
+        scroll_layout.addSpacing(5)
+        scroll_layout.addWidget(targeted_search_frame)
+        scroll_layout.addSpacing(5)
+        scroll_layout.addWidget(exclusion_title)
+        scroll_layout.addSpacing(5)
+        scroll_layout.addWidget(exclusion_frame)
+        scroll_layout.addSpacing(10)
+        scroll_layout.addWidget(search_button)
+
+        scroll_area = QScrollArea()
+        scroll_area.setStyleSheet(self.QSCROLLBAR_STYLE)
+        scroll_area.setWidgetResizable(True)  
+        scroll_area.setWidget(scroll_content)     
+        scroll_area.setFrameShape(QScrollArea.NoFrame)
+
         # Left Panel
         left_layout.addLayout(switch_buttons_layout)
         left_layout.addSpacing(10)
-        left_layout.addWidget(search_title)
-        left_layout.addSpacing(5)
-        left_layout.addWidget(search_frame)
-        left_layout.addSpacing(5)
-        left_layout.addWidget(targeted_search_title)
-        left_layout.addSpacing(5)
-        left_layout.addWidget(targeted_search_frame)
-        left_layout.addSpacing(5)
-        left_layout.addWidget(exclusion_title)
-        left_layout.addSpacing(5)
-        left_layout.addWidget(exclusion_frame)
-        left_layout.addSpacing(10)
-        left_layout.addWidget(search_button)
-        left_layout.addStretch()
+        left_layout.addWidget(scroll_area)
 
         return left_panel
 

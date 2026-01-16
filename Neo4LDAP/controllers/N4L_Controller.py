@@ -47,6 +47,22 @@ class N4LController():
 
     def __init__(self):
         if not self._initialized :
+            default_width, default_height = 1600, 900
+            screen_width, screen_height = 0,0
+
+            # Temporal App to retrieve screen dimensions
+            tmp_app = QApplication(sys.argv)
+            screen = tmp_app.primaryScreen()
+            screen_geometry = screen.availableGeometry()       
+
+            screen_width = screen_geometry.width()
+            screen_height = screen_geometry.height()
+
+            if(screen_width < default_width or screen_height < default_height):
+                os.environ["QT_SCALE_FACTOR"] = "0.85"
+
+            tmp_app.shutdown()
+
             self.app = QApplication(sys.argv)
             self.app.setFont(QFont("Segoe UI, Tahoma, Arial, sans-serif", 11))
 
@@ -61,8 +77,17 @@ class N4LController():
 
             self.custom_queries_list = []
             self.load_custom_queries()
-
+    
             self.main_window = MainWindow(self.get_instance())
+
+            # If we are in a small screen, we need to resize the mainwindow       
+            margin_width = 320
+            margin_height = 67
+
+            window_width = max(100, screen_width - margin_width) 
+            window_height = max(100, screen_height - margin_height)
+
+            self.main_window.setFixedSize(window_width, window_height)
 
             self.load_acl_weights()
             self._initialized = True

@@ -1,5 +1,5 @@
 from PySide6.QtGui import QColor, QKeySequence, QShortcut, QFont
-from PySide6.QtWidgets import QApplication, QHeaderView, QScrollArea, QTableWidget, QTableWidgetItem, QMenu
+from PySide6.QtWidgets import QToolTip, QApplication, QHeaderView, QScrollArea, QTableWidget, QTableWidgetItem, QMenu
 from PySide6.QtCore import QPoint
 
 from Neo4LDAP.gui.N4L_CommonViewer import *
@@ -42,16 +42,20 @@ class LDAPViewerApp(ViewerApp):
         splitter.setHandleWidth(0)
 
         main_layout.addWidget(splitter)
-
-        self.setLayout(main_layout)
         self.init_shortcuts()
 
     def initialize_left_panel(self) -> QWidget:
         left_panel = QWidget()
-        left_panel.setStyleSheet("background-color: {color}".format(color = self.PANELS_BG))
+        left_panel.setStyleSheet("background-color: {color}; border: none;".format(color = self.PANELS_BG))
 
         left_layout = QVBoxLayout(left_panel)
         left_layout.setAlignment(Qt.AlignTop)
+
+        scroll_content = QWidget()
+        scroll_content.setStyleSheet("background-color: {color}; border: none;".format(color = self.PANELS_BG))
+
+        scroll_layout = QVBoxLayout(scroll_content)
+        scroll_layout.setAlignment(Qt.AlignTop)
 
         switch_buttons_layout = self.create_switch_buttons_layout()
 
@@ -69,19 +73,29 @@ class LDAPViewerApp(ViewerApp):
         footer_label.setStyleSheet("color: {background}; font-weight: bold; font-size: 12px; margin-top: 10px;".format(background = self.BUTTON_HOVER))
         footer_label.setAlignment(Qt.AlignCenter)
 
+        #Scrollable content
+        scroll_layout.addWidget(ldap_title)
+        scroll_layout.addSpacing(5)
+        scroll_layout.addWidget(ldap_frame)
+        scroll_layout.addSpacing(10)
+        scroll_layout.addWidget(custom_query_title)
+        scroll_layout.addSpacing(5)
+        scroll_layout.addWidget(custom_query_frame)
+        scroll_layout.addSpacing(30)
+        scroll_layout.addWidget(footer_label)
+        scroll_layout.addSpacing(30)
+
+        scroll_area = QScrollArea()
+        scroll_area.setStyleSheet(self.QSCROLLBAR_STYLE)
+        scroll_area.setWidgetResizable(True)  
+        scroll_area.setWidget(scroll_content)     
+        scroll_area.setFrameShape(QScrollArea.NoFrame)
+        
         # Left Panel
         left_layout.addLayout(switch_buttons_layout)
         left_layout.addSpacing(10)
-        left_layout.addWidget(ldap_title)
-        left_layout.addSpacing(5)
-        left_layout.addWidget(ldap_frame)
-        left_layout.addSpacing(10)
-        left_layout.addWidget(custom_query_title)
-        left_layout.addSpacing(5)
-        left_layout.addWidget(custom_query_frame)
-        left_layout.addSpacing(30)
-        left_layout.addWidget(footer_label)
-        left_layout.addSpacing(30)
+        left_layout.addWidget(scroll_area)
+
 
         return left_panel
 
@@ -327,7 +341,7 @@ class LDAPViewerApp(ViewerApp):
         self.information_table = QTableWidget(len(neo4j_statsTitle), 2)
         self.information_table.setSelectionMode(QTableWidget.NoSelection)
 
-        self.information_table.setColumnWidth(0, 285)
+        self.information_table.setColumnWidth(0, 250)
 
         self.information_table.horizontalHeader().setSectionResizeMode(1, QHeaderView.Stretch)
 
@@ -390,6 +404,15 @@ class LDAPViewerApp(ViewerApp):
         font.setPointSize(12)
         font.setBold(True)
 
+        QToolTip.setFont(font)
+        self.setStyleSheet("""
+            QToolTip { 
+                background-color: black; 
+                color: white; 
+                border: black solid 1px
+            }
+        """)
+
         for row, stat in enumerate(neo4j_statsTitle):
             stat_label, stat_item = "", ""
             if stat != "" :
@@ -410,6 +433,8 @@ class LDAPViewerApp(ViewerApp):
 
             stat_label.setFont(font)
             stat_item.setFont(font)
+
+            stat_item.setToolTip(stat_item.text())
                        
             self.information_table.setItem(row, 0, stat_label)
             self.information_table.setItem(row, 1, stat_item)

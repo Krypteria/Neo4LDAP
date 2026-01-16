@@ -86,5 +86,6 @@ class LoginWindow(ViewerApp):
 
         self.setLayout(main_layout)
 
+
     def on_login_button_clicked(self) -> None: 
         self.controller.login(self.username_input.text(), self.password_input.text(), self.database_input.text(), self.bolt_uri_input.text())

@@ -14,7 +14,7 @@ class N4LFileExplorer(Popups):
         self.first_time = True
         self.selected_files = []
 
-        self.setMinimumSize(700, 800)
+        self.setMinimumSize(700, 500)
 
         title_label = self.create_label("Ingest JSON into Neo4j", True, self.MESSAGE_TITLE_STYLE_2, 40)
         title_label.setAlignment(Qt.AlignCenter)
@@ -120,15 +120,30 @@ class N4LFileExplorer(Popups):
         options_buttons_layout.addWidget(self.confirm_button)
         options_buttons_layout.addWidget(self.close_button)
 
+        scroll_content = QWidget()
+        scroll_content.setStyleSheet("background-color: {color}; border: none;".format(color = self.PANELS_BG))
+
+        scroll_layout = QVBoxLayout(scroll_content)
+        scroll_layout.setAlignment(Qt.AlignTop)
+
+        scroll_layout.addWidget(self.view)
+        scroll_layout.addWidget(self.select_files_button)
+        scroll_layout.addWidget(self.debug_panel)
+        scroll_layout.addSpacing(10)
+        scroll_layout.addLayout(upload_options_buttons_layout)
+        scroll_layout.addSpacing(10)
+        scroll_layout.addLayout(options_buttons_layout)
+
+        scroll_area = QScrollArea()
+        scroll_area.setStyleSheet(self.QSCROLLBAR_STYLE)
+        scroll_area.setWidgetResizable(True)  
+        scroll_area.setWidget(scroll_content)     
+        scroll_area.setFrameShape(QScrollArea.NoFrame)
+
         explorer_layout.addWidget(title_label)
         explorer_layout.addLayout(path_bar_layout)
-        explorer_layout.addWidget(self.view)
-        explorer_layout.addWidget(self.select_files_button)
-        explorer_layout.addWidget(self.debug_panel)
-        explorer_layout.addSpacing(10)
-        explorer_layout.addLayout(upload_options_buttons_layout)
-        explorer_layout.addSpacing(10)
-        explorer_layout.addLayout(options_buttons_layout)
+        explorer_layout.addWidget(scroll_area)
+        
 
         self.view.setMinimumHeight(300)
         self.debug_panel.setMinimumHeight(250)
