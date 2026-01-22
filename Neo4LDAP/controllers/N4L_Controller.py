@@ -81,15 +81,6 @@ class N4LController():
     
             self.main_window = MainWindow(self.get_instance())
 
-            # If we are in a small screen, we need to resize the mainwindow       
-            margin_width = 320
-            margin_height = 67
-
-            window_width = self.screen_width - margin_width
-            window_height = self.screen_height - margin_height
-
-            self.main_window.setFixedSize(window_width, window_height)
-
             self.load_acl_weights()
             self._initialized = True
 
@@ -190,8 +181,8 @@ class N4LController():
         from Neo4LDAP.model.N4L_Cypher import perform_query
         self.run_in_new_thread(True, False, perform_query, query_value, attribute_list, raw_query)
 
-    def redraw_LDAP_result_table(self, queryOutput) -> None:
-        self.main_window.redraw_LDAP_result_table(queryOutput)
+    def redraw_LDAP_result_table(self, query_output, owned_nodes) -> None:
+        self.main_window.redraw_LDAP_result_table(query_output, owned_nodes)
 
     # # Custom Queries
     def load_custom_queries(self) -> None:
@@ -320,6 +311,10 @@ class N4LController():
     def show_shadow_relationships(self, node, shadow_relationships_list) -> None:
         from Neo4LDAP.gui.N4L_Popups import N4LShadowRelationshiphs
         N4LShadowRelationshiphs(self.retrieve_main_window(), self, node, shadow_relationships_list)
+
+    def modify_ownership(self, owned_value, node_type, node_id) -> None:
+        from Neo4LDAP.model.N4L_Cypher import set_ownership
+        self.run_in_new_thread(True, False, set_ownership, owned_value, node_type, node_id)
 
     # ---
 

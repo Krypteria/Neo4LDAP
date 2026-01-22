@@ -84,9 +84,9 @@ class GraphView(QGraphicsView):
         return color 
 
     # Node utilities
-    def add_node(self, x, y, label, node_type, node_id, shadow_relationships, shadow_relationships_list) -> GraphNode:
+    def add_node(self, x, y, label, node_type, node_id, shadow_relationships, shadow_relationships_list, owned) -> GraphNode:
         fill_color = self.choose_node_color(node_type)
-        node = GraphNode(x, y, label, node_type, node_id, fill_color, shadow_relationships, shadow_relationships_list)
+        node = GraphNode(x, y, label, node_type, node_id, fill_color, shadow_relationships, shadow_relationships_list, owned)
         self.scene.addItem(node)
         self.nodes[label] = node
 
@@ -464,7 +464,7 @@ class GraphView(QGraphicsView):
         self.clear_graph()
 
         for node, data in graph.nodes(data=True):
-            self.add_node(0, 0, node, data.get("node_type", ""), data.get("node_id", ""), data.get("shadow_relationships", 0), data.get("shadow_relationships_list", []))
+            self.add_node(0, 0, node, data.get("node_type", ""), data.get("node_id", ""), data.get("shadow_relationships", 0), data.get("shadow_relationships_list", []), data.get("node_owned", False))
         
         for source, target, data in graph.edges(data=True):
             self.add_edge(source, target, data.get("relationship", ""))

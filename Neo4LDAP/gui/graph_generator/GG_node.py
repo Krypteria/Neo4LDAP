@@ -3,7 +3,7 @@ from PySide6.QtGui import QBrush, QColor, QFont
 from PySide6.QtCore import Qt
 
 class GraphNode(QGraphicsEllipseItem):
-    def __init__(self, x, y, label, node_type, node_id, color, shadow_relationships = 0, shadow_relationships_list = [], radius=20):
+    def __init__(self, x, y, label, node_type, node_id, color, shadow_relationships = 0, shadow_relationships_list = [], owned = False, radius=20):
         super().__init__(-radius, -radius, radius * 2, radius * 2)
 
         self.radius = radius
@@ -13,7 +13,10 @@ class GraphNode(QGraphicsEllipseItem):
         self.edges = []
         self.subgraph_hidden = False
 
+        self.owned = owned
+
         self.set_hidden_count(shadow_relationships)
+        self.set_owned(self.owned)
 
         self.shadow_relationships_list = shadow_relationships_list
         self.availaible_shadow_relationships = False
@@ -45,12 +48,12 @@ class GraphNode(QGraphicsEllipseItem):
         self.setZValue(2)
         self.text.setZValue(3)
 
-    def set_hidden_count(self, count: int) -> None:
-        if hasattr(self, 'count_text') and self.count_text :
+    def set_hidden_count(self, count) -> None:
+        if hasattr(self, 'count_text') and self.count_text:
             self.scene().removeItem(self.count_text)
             self.count_text = None
 
-        if count <= 0 :
+        if count <= 0:
             return
 
         self.count_text = QGraphicsTextItem(str(count), self)
@@ -62,6 +65,25 @@ class GraphNode(QGraphicsEllipseItem):
 
         self.count_text.setPos(offset_x, offset_y)
         self.count_text.setZValue(4)
+
+    def set_owned(self, owned) -> None:
+        self.owned_text = None
+
+        if(owned):
+            self.owned_text = QGraphicsTextItem("💀", self)
+            self.owned_text.setDefaultTextColor(Qt.white)
+            self.owned_text.setFont(QFont("Segoe UI, Tahoma, Arial, sans-serif", 12))
+            self.owned_text.setZValue(4)
+
+            offset_x = self.radius * 1.7
+            offset_y = self.radius * 1.7
+
+            self.owned_text.setPos(-offset_x, -offset_y)
+            
+        elif(not owned and self.owned_text != None):
+            self.scene().removeItem(self.owned_text)
+            self.owned_text = None
+
 
     def add_edge(self, edge) -> None:
         self.edges.append(edge)
@@ -117,25 +139,35 @@ class GraphNode(QGraphicsEllipseItem):
 
         menu.addSeparator()
 
+        outbound_action = menu.addAction("Outbound search")
+        inbound_action = menu.addAction("Inbound search")
+
+        menu.addSeparator()
+
+        source_action = menu.addAction("Add as Source")
+        target_action = menu.addAction("Add as Target")
+
+        menu.addSeparator()
+
+        if(not self.owned):
+            owned_action = menu.addAction("Set as owned")
+        elif(self.owned):
+            owned_action = menu.addAction("Unset as owned")
+
         toggle_action = ""
         if self.subgraph_hidden :
             toggle_action = menu.addAction("Show")
         else:
             toggle_action = menu.addAction("Hide")
 
-        menu.addSeparator()
-        inbound_action = menu.addAction("Inbound ACLs")
-        outbound_action = menu.addAction("Outbound ACLs")
-        menu.addSeparator()
-        source_action = menu.addAction("Add as Source")
-        target_action = menu.addAction("Add as Target")
-        menu.addSeparator()
         exclusion_action = menu.addAction("Exclude")
 
-        selected = menu.exec(global_pos)
 
+        # Menu actions
         from Neo4LDAP.controllers.N4L_Controller import N4LController
         controller = N4LController().get_instance()
+
+        selected = menu.exec(global_pos)
         
         if selected == toggle_action :
             self.toggle_action(not self.subgraph_hidden)
@@ -143,6 +175,11 @@ class GraphNode(QGraphicsEllipseItem):
             query = "(&(objectClass={node_type})(objectid={node_id}))".format(node_type = self.node_type, node_id = self.node_id)
 
             controller.request_LDAP_query_from_node(query, None, False)
+        elif selected == owned_action:
+            self.owned = not self.owned
+            self.set_owned(self.owned)
+
+            controller.modify_ownership(self.owned, self.node_type, self.node_id)
         elif selected == shadow_relationships_action:
             controller.show_shadow_relationships(self.label, self.shadow_relationships_list)
         elif selected == inbound_action :

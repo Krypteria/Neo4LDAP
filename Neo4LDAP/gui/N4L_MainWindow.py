@@ -1,4 +1,4 @@
-from PySide6.QtWidgets import QMainWindow, QStackedWidget, QWidget, QVBoxLayout
+from PySide6.QtWidgets import QMainWindow, QStackedWidget, QWidget, QVBoxLayout, QSizePolicy
 from PySide6.QtCore import Signal
 
 from Neo4LDAP.gui.N4L_LDAPViewer import LDAPViewerApp
@@ -17,8 +17,8 @@ class MainWindow(QMainWindow):
         self.controller = controller
 
         self.stacked_widgets = QStackedWidget(self)
-
         self.login_handler = LoginWindow(self.controller)
+        
         self.stacked_widgets.addWidget(self.login_handler)
 
         layout = QVBoxLayout()
@@ -34,7 +34,7 @@ class MainWindow(QMainWindow):
         self.setWindowTitle("Neo4LDAP")
 
         self.stacked_widgets.setCurrentWidget(self.login_handler)
-    
+        
     # Login methods
     def init_login(self, app) -> None:
         self.stacked_widgets.setCurrentWidget(self.login_handler)
@@ -75,8 +75,8 @@ class MainWindow(QMainWindow):
     def update_custom_queries_view(self, custom_queries_list) -> None:
         self.LDAPViewer_handler.update_custom_queries_signal.emit(custom_queries_list)
 
-    def redraw_LDAP_result_table(self, queryOutput) -> None:
-        self.LDAPViewer_handler.refresh_signal.emit(queryOutput)
+    def redraw_LDAP_result_table(self, query_output, owned_nodes) -> None:
+        self.LDAPViewer_handler.refresh_signal.emit(query_output, owned_nodes)
 
     def add_query_to_panel(self, query) -> None:
         self.LDAPViewer_handler.add_query_signal.emit(query)

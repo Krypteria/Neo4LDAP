@@ -39,7 +39,7 @@ class LoginWindow(ViewerApp):
         icon_path = controller.retrieve_resource_path("brand.png") 
         
         pixmap = QPixmap(icon_path)
-        scaled_pixmap = pixmap.scaled(250, 1000, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+        scaled_pixmap = pixmap.scaled(250, 125, Qt.KeepAspectRatio, Qt.SmoothTransformation)
         image_label.setPixmap(scaled_pixmap)
         image_label.setAlignment(Qt.AlignCenter)
 

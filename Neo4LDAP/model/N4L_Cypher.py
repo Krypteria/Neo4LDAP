@@ -389,6 +389,48 @@ def format_by_attributes(attribute, remaining_attrs) -> str:
 
     return attr_output
 
+# --
+def set_ownership(owned, object_type, object_id) -> None:
+    query = ""
+    if(owned):
+        query = """
+        MATCH (n)
+        WHERE ( n:{object_type} AND toUpper(n.objectid) = '{object_id}' )
+        SET n:Owned
+        """.format(object_type = object_type, object_id = object_id)
+    else:
+        query = """
+        MATCH (n)
+        WHERE ( n:{object_type} AND toUpper(n.objectid) = '{object_id}' )
+        REMOVE n:Owned
+        """.format(object_type = object_type, object_id = object_id)
+
+    with Neo4jConnector.driver.session(database=Neo4jConnector.database) as session:
+        try:
+            _ = session.run(query) 
+        except:
+            controller = N4LController().get_instance()
+            controller.notify_error(traceback.format_exc())
+
+def retrieve_owned_nodes() -> list:
+    query = """
+    MATCH(n:Owned)
+    RETURN n.name as name
+    """
+
+    owned_nodes = []
+    with Neo4jConnector.driver.session(database=Neo4jConnector.database) as session:
+        try:
+            result = session.run(query)
+            for record in result:
+                if record["name"] is not None:
+                    owned_nodes.append(record["name"]) 
+        except:
+            controller = N4LController().get_instance()
+            controller.notify_error(traceback.format_exc())
+
+    return owned_nodes
+
 # -- 
 def push_debug_info(msg) -> None:
     controller = N4LController().get_instance()
@@ -457,8 +499,10 @@ def perform_query(query, attributes, raw) -> None:
         ldap_output = execute_query(cypher_query, attributes, raw)
         push_debug_info("[✓] Query executed")
 
+        owned_nodes = retrieve_owned_nodes()
+
         if ldap_output != "No data found" :
-            controller.redraw_LDAP_result_table(ldap_output)
+            controller.redraw_LDAP_result_table(ldap_output, owned_nodes)
         else:
             controller.notify_no_results("LDAP Query didn't return any result")
         

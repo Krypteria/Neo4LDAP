@@ -159,7 +159,7 @@ class ACLViewerApp(ViewerApp):
         search_frame.setStyleSheet(self.QFRAME_STYLE)
 
         name_label = self.create_label("User Principal Name / DNS Name", True)
-        acl_label = self.create_label("ACL Type", True)
+        acl_label = self.create_label("ACE Type", True)
 
         self.acl_input = self.create_text_field()
         self.name_input = self.create_text_field()
@@ -427,7 +427,7 @@ class ACLViewerApp(ViewerApp):
 
     def show_acl_help_popup(self) -> None: 
         from Neo4LDAP.gui.N4L_Popups import N4LMessageBox
-        text = "The following ACLs are supported in Neo4LDAP:\n\n• All\n• FirstDegree\n\nExtended ACLs:\n\n"
+        text = "The following ACEs are supported in Neo4LDAP:\n\n• All\n• FirstDegree\n\nExtended ACEs:\n\n"
         
         self.neo4j_stats = self.controller.retrieve_neo4j_stats()
         for acl in self.neo4j_stats["ACL_Types"]:

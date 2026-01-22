@@ -195,10 +195,10 @@ class ACLGraph:
                 continue
 
             for node in nodes:
-                node_fullname, node_type, node_id = self.retrieve_node_identity(node)
+                node_fullname, node_type, node_id, node_owned = self.retrieve_node_identity(node)
 
                 if (node_fullname not in self.graph) and ((exclusion_list == None) or (exclusion_list != None and node_fullname not in exclusion_list)) :
-                    self.graph.add_node(node_fullname, node_type=node_type, node_id = node_id)
+                    self.graph.add_node(node_fullname, node_type=node_type, node_id = node_id, node_owned = node_owned)
                     node_list.append(node_fullname)
 
             for relationship in relationships:
@@ -206,8 +206,8 @@ class ACLGraph:
                 target_node = relationship.nodes[1]
                 acl = relationship.type
 
-                source, _, _ = self.retrieve_node_identity(source_node)
-                target, _, _ = self.retrieve_node_identity(target_node)
+                source, _, _, _ = self.retrieve_node_identity(source_node)
+                target, _, _, _ = self.retrieve_node_identity(target_node)
 
                 if inbound_check :
                     if (exclusion_list == None) or (exclusion_list != None and source not in exclusion_list) :
@@ -273,8 +273,14 @@ class ACLGraph:
                 self.add_relationship(source, ",".join(self.acls_by_nodes[source][target]), target)
     
     def retrieve_node_identity(self, node) -> tuple:
+        node_owned = False
+        
         node_type = list(node.labels)
         node_type.remove("Base")
+        
+        if("Owned" in node_type):
+            node_type.remove("Owned")
+            node_owned = True
 
         node_id = node.get("objectid", "UNKNOWN")
 
@@ -283,11 +289,11 @@ class ACLGraph:
         
         if node_type[0] == "Domain" :
             fullname = node.get("domain") or node.get("objectid") or "UNKNOWN" 
-            return fullname, node_type[0], node_id
+            return fullname, node_type[0], node_id, node_owned
         else:
             fullname = node.get("name") or node.get("objectid") or "UNKNOWN"
 
-            return fullname, node_type[0], node_id
+            return fullname, node_type[0], node_id, node_owned
 
 def draw_acl_graph(graph, name, inbound_check) -> None:
     root_node = ""

@@ -90,6 +90,9 @@ class LDAPViewerApp(ViewerApp):
         scroll_area.setWidgetResizable(True)  
         scroll_area.setWidget(scroll_content)     
         scroll_area.setFrameShape(QScrollArea.NoFrame)
+
+        scroll_area.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
+        scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
         
         # Left Panel
         left_layout.addLayout(switch_buttons_layout)
@@ -570,8 +573,8 @@ class LDAPViewerApp(ViewerApp):
     # ---
     
     # Utility methods
-    def redraw_gui(self, resultOutput) -> None:
-        lines = resultOutput.split("\n")
+    def redraw_gui(self, result_output, owned_nodes) -> None:
+        lines = result_output.split("\n")
 
         old_table = self.ldap_result_table
         self.ldap_result_table = self.create_ldap_table()
@@ -615,7 +618,10 @@ class LDAPViewerApp(ViewerApp):
                 key = ""
 
             value_item = QTableWidgetItem(value)
-            value_item.setForeground(QColor("white"))
+            if value in owned_nodes:
+                value_item.setForeground(QColor(self.BUTTON_BG))
+            else:
+                value_item.setForeground(QColor("white"))
             value_item.setFlags(Qt.ItemIsSelectable | Qt.ItemIsEnabled)
 
             key_item = QTableWidgetItem(key)

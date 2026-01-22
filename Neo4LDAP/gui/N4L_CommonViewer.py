@@ -278,7 +278,7 @@ class QWidgetFactory(Styles):
             message_text.setPlaceholderText(placeholder_text)
 
         message_text.setReadOnly(True)
-        message_text.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
+        message_text.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         message_text.setAlignment(Qt.AlignTop | Qt.AlignLeft)
         message_text.setContextMenuPolicy(Qt.NoContextMenu)
         message_text.setStyleSheet(self.MESSAGE_TEXT_STYLE)
@@ -329,7 +329,7 @@ class Popups(QWidgetFactory):
         super().__init__(parent)
 
 class ViewerApp(QWidgetFactory):
-    refresh_signal = Signal(str)
+    refresh_signal = Signal(str, list)
     refresh_graph_signal = Signal(object, str, bool)
     no_result_signal = Signal(QObject, str)
     error_signal = Signal(QObject, str)
@@ -349,7 +349,7 @@ class ViewerApp(QWidgetFactory):
     def create_switch_buttons_layout(self) -> QHBoxLayout:
         switch_buttons_layout = QHBoxLayout()
         LDAPViewer_button = self.create_button("LDAP Viewer", self.change_to_LDAPView)
-        ACLViewer_button = self.create_button("ACL Viewer", self.change_to_ACLView) 
+        ACLViewer_button = self.create_button("GRAPH Viewer", self.change_to_ACLView) 
 
         switch_buttons_layout.addWidget(LDAPViewer_button)
         switch_buttons_layout.addWidget(ACLViewer_button)

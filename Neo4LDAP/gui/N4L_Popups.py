@@ -497,6 +497,8 @@ class N4LMessageBox(Popups):
             }}
         """.format(background = self.POPUP_BG, border = self.PANELS_BD))
 
+        message_frame.setFixedSize(width, height)
+
         title_label = self.create_label(title, True, self.MESSAGE_TITLE_STYLE, 40)
         title_label.setAlignment(Qt.AlignCenter)
 
