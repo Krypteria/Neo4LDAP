@@ -1,50 +1,59 @@
 ## About Neo4LDAP
 
-**Neo4LDAP** is a query and visualization tool focused on **Active Directory environments**. It combines LDAP syntax with graph-based data analysis in Neo4j, offering an alternative approach to tools like BloodHound.
+**Neo4LDAP** is a query and visualization tool focused on **Active Directory**. It combines LDAP syntax with graph-based data analysis in Neo4j, offering an alternative approach to tools like BloodHound.
+
+<img width="1916" height="930" alt="Image" src="https://github.com/user-attachments/assets/40624370-29e1-4523-bc84-90bcdd5e4ebb" />
+
+<img width="1914" height="928" alt="Image" src="https://github.com/user-attachments/assets/8e709694-aa4c-486a-9037-dfe628637b85" />
 
 ---
 
-### 🔍 LDAP-Driven Query Engine
+## Capabilities
 
-Neo4LDAP translates LDAP queries into Cypher internally, allowing users to:
+### LDAP Viewer
 
 - Run **complex and expressive queries** directly against Neo4j  
-- **Avoid learning Cypher**, using familiar LDAP syntax  
-- **Quickly create custom queries** and extract relevant information  
+- **No need to learn Cypher**: queries can be written in **LDAP syntax**  
+- Create **custom reusable queries**
+- **Owned nodes** are highlighted to improve visibility and search efficiency
 
----
+### Graph Viewer
 
-### 🗺️ Graph Visualization for AD Structures
+- Analyze Active Directory ACLs through **interactive graphs**.
+    - Outbound analysis
+    - Inbound analysis
+    - Targeted analysis 
+- Advanced techniques to **reduce visual noise**
+    - **Exclude nodes** to remove irrelevant elements from the view
+    - **Temporarily hide graph sections** to improve focus and readability
+    - **Depth-limited search** to control graph size and prevent visual clutter
+- Full control over **graph behavior**
+    - Define the relevance of each ACE to match your objectives
+    - **Context-driven algorithms** that adapt to your analytical needs
 
-Neo4LDAP provides a graph interface designed to support **large and complex directory environments**, offering:
+### Integration with BloodHound Workflows
 
-- **Exclude nodes** to eliminate irrelevant elements
-- **Temporary hide parts of the graph** to improve visibility and focus
-- **Depth-limited search** to control graph size and reduce visual clutter
-
-These features improve clarity when analyzing access paths, ACLs, and privilege escalation scenarios.
-
----
-
-### 🔗 Integration with BloodHound Workflows
-
-To support existing ecosystems, Neo4LDAP includes:
-
-- A **data ingestion feature** for importing BloodHound JSON files  
+- Neo4LDAP can **ingest data from BloodHound JSON files**  
 - Support for both **Legacy** and **Community Edition (CE)** formats
-- Fast multithreaded ingestion
+- **Fast, multithreaded** ingestion
 
-This allows Neo4LDAP to **coexist with BloodHound** and be used as a practical alternative in the Active Directory cybersecurity field.
+### Other capabilities
 
-> ⚠️ **Disclaimer:** At the moment, only on-premise data is processed, Azure data is not currectly supported.
+- **Multi-database** support
+- **Independent panels**: analyze graphs while querying data simultaneously, without losing context 
 
+--- 
 
 > 📘 To maximize the effectiveness of Neo4LDAP and gain a deeper understanding of how it handles special cases and internal logic, it is highly recommended to read through the full [project wiki](https://github.com/Krypteria/Neo4LDAP/wiki). The documentation covers key design decisions, usage examples, and query behaviors that may not be immediately apparent.
-`
+
 # Recommendations
 
-With the current parsing and ingestion method, it is recommended not to upload JSON files larger than 150 MB, as this may affect memory efficiency. If you have a larger JSON file, it is advisable to split it into chunks using [ShredHound](https://github.com/ustayready/ShredHound) before uploading them.
+Ingestion of large JSONs may affect memory efficiency. If you have a large JSON file, it is advisable to split it into chunks using [ShredHound](https://github.com/ustayready/ShredHound) before uploading them.
 
+You can modify the scale factor of Neo4LDAP by using the following command:
+```bash
+QT_SCALE_FACTOR=<VALUE> neo4ldap
+```
 # Installation
 
 Neo4LDAP uses **Neo4j** as its database. To use the tool, you must install and run a Neo4j instance. For installation instructions, please refer to the [official Neo4j installation guide](https://neo4j.com/docs/operations-manual/2025.08/installation/)
@@ -54,30 +63,30 @@ Once Neo4j is installed, start it by running:
 neo4j console
 ```
 
-To install **Neo4LDAP**, it is recommended to use a Conda virtual environment with Python 3.9.13 or higher to isolate the installation and avoid dependency conflicts:
+To install **Neo4LDAP**, it is recommended to use a **Conda virtual environment** with **Python 3.9.13 or higher** to isolate the installation and avoid dependency conflicts:
 
 ```bash
 conda create -n neo4ldap python=3.9.13
 conda activate neo4ldap
 ```
 
-Once the conda environment is activated, install the following Python dependencies using `pip`:
+Once the conda environment is activated, install the following **Python dependencies** using `pip`:
 
 ```bash
 pip install networkx neo4j-rust-ext PySide6
 ```
 
-Depending on the display server protocol you are using, you must install some extra dependencies. To check which display server protocol you are using, execute the following command:
+Depending on the display server protocol you are using, you must install **some extra dependencies**. To check which display server protocol you are using, execute the following command:
 ```bash
 echo $XDG_SESSION_TYPE
 ```
 
-If that command returns ```x11```, you must install the following dependency:
+If that command returns ```x11```, you must install the following **dependency**:
 ```bash
 sudo apt install libxcb-cursor0
 ```
 
-It is recommended to define the following shell alias in .bashrc, .zshrc, or equivalent shell configuration:
+It is recommended to define the following **shell alias** in .bashrc, .zshrc, or equivalent shell configuration:
 
 ```bash
 nano ~/.bashrc
@@ -89,24 +98,6 @@ neo4ldap() {
 
 source ~/.bashrc
 ```
-# Known Issues
-Neo4LDAP is designed to run on a 96 DPI screen. If you are running it on a higher DPI screen, it is recommended to start Neo4LDAP as follows:
-```bash
-QT_SCALE_FACTOR=<VALUE> neo4ldap
-```
-
-For example, if your DPI is 200, the value should be calculated as 96 / 200 = 0.48:
-
-```bash
-QT_SCALE_FACTOR=0.48 neo4ldap
-```
-
-This will display Neo4LDAP at 96 DPI without the need to change your OS settings.
-
-# Demo
-
-[![NeoLDAP: Overview and Capabilities](https://github.com/user-attachments/assets/3e7f943d-c8eb-4c60-b2b5-7368d3e4b2c5)](https://youtu.be/f2vkcroaBqg)
-
 
 # Acknowledgements
 
