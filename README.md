@@ -46,6 +46,12 @@
 
 > 📘 To maximize the effectiveness of Neo4LDAP and gain a deeper understanding of how it handles special cases and internal logic, it is highly recommended to read through the full [project wiki](https://github.com/Krypteria/Neo4LDAP/wiki). The documentation covers key design decisions, usage examples, and query behaviors that may not be immediately apparent.
 
+Additionally, there are **two articles** covering the tool's internals:
+- [Goodbye Cypher, Hello LDAP: Querying Neo4j with Neo4LDAP](https://medium.com/@kripteria.sec/goodbye-cypher-hello-ldap-querying-neo4j-with-neo4ldap-5e6466426a01)
+- [Finding optimal attack paths in Active Directory with Neo4LDAP](https://medium.com/@kripteria.sec/finding-optimal-attack-paths-in-active-directory-with-neo4ldap-3d2158419f35)
+
+--- 
+
 # Recommendations
 
 Ingestion of large JSONs may affect memory efficiency. If you have a large JSON file, it is advisable to split it into chunks using [ShredHound](https://github.com/ustayready/ShredHound) before uploading them.
